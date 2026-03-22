@@ -31,7 +31,10 @@ app.post('/lead', (req, res) => {
 
   res.json({ sucesso: true, whatsappUrl: whatsappUrl });
 });
-
+app.get('/leads', (req, res) => {
+  const leads = JSON.parse(fs.readFileSync(LEADS_FILE));
+  res.json(leads);
+});
 app.listen(PORT, function() {
   console.log('Servidor rodando na porta ' + PORT);
 });
