@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Links UTM</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Gerador de Links UTM</h1>
+  </header>
+
+  <main class="gerador">
+    <p>Use isto para gerar os links que vão no Instagram, WhatsApp e Google Maps do advogado.</p>
+
+    <label for="url-base">URL base do site</label>
+    <input type="url" id="url-base" placeholder="https://seusite.com.br">
+
+    <label for="origem">Origem (utm_source)</label>
+    <select id="origem">
+      <option value="instagram">Instagram</option>
+      <option value="whatsapp">WhatsApp</option>
+      <option value="google_maps">Google Maps</option>
+      <option value="facebook">Facebook</option>
+      <option value="outro">Outro</option>
+    </select>
+
+    <label for="meio">Meio (utm_medium)</label>
+    <input type="text" id="meio" placeholder="bio, story, perfil, direct...">
+
+    <label for="campanha">Campanha (utm_campaign)</label>
+    <input type="text" id="campanha" placeholder="ex: lancamento_piloto">
+
+    <button id="gerar" type="button">Gerar link</button>
+
+    <div class="resultado" id="resultado" style="display:none;">
+      <p id="link-gerado"></p>
+      <button id="copiar" type="button">Copiar link</button>
+    </div>
+  </main>
+
+  <script src="/js/utm-generator.js"></script>
+</body>
+</html>

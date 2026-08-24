@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carregando...</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="/index.html" class="voltar">← Voltar</a>
+  </header>
+
+  <main id="conteudo-area">
+    <h2 id="area-titulo"></h2>
+    <p id="area-resumo"></p>
+
+    <h3>Situações comuns nessa área:</h3>
+    <ul id="problemas-lista"></ul>
+
+    <form id="lead-form" class="lead-form">
+      <div id="qualificacao-wrap"></div>
+
+      <label for="nome" id="label-nome">Seu nome</label>
+      <input type="text" id="nome" required>
+
+      <div id="cpf-wrap" style="display:none;">
+        <label for="cpf">CPF</label>
+        <input type="text" id="cpf" placeholder="000.000.000-00">
+      </div>
+
+      <label for="telefone">Seu WhatsApp</label>
+      <input type="tel" id="telefone" required placeholder="(11) 99999-9999">
+
+      <div id="email-wrap" style="display:none;">
+        <label for="email">Seu e-mail</label>
+        <input type="email" id="email">
+      </div>
+
+      <p id="mensagem-erro" class="erro"></p>
+
+      <button type="submit" id="botao-enviar">Falar com o advogado no WhatsApp</button>
+    </form>
+  </main>
+
+  <script src="/js/utm.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/tracking.js"></script>
+  <script src="/js/area.js"></script>
+</body>
+</html>

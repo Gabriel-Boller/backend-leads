@@ -1,0 +1,36 @@
+{
+  "advogado": {
+    "nome": "Gabriel Boller",
+    "oab": "OAB/PR 2468265",
+    "whatsapp": "5567935218420",
+    "cidade": "Toledo - PR"
+  },
+  "tema": {
+    "nomeSite": "Bispo & Boller",
+    "corPrimaria": "#0D2B4E",
+    "corSecundaria": "#6B7280",
+    "logoUrl": ""
+  },
+  "tracking": {
+    "ga4Id": "",
+    "metaPixelId": "",
+    "googleAdsId": ""
+  },
+  "formulario": {
+    "labelNome": "Nome completo",
+    "coletarCpf": true,
+    "coletarEmail": true
+  },
+  "areasDeAtuacao": [
+    {
+      "slug": "bancario",
+      "titulo": "Direito Bancário",
+      "resumoCurto": "Problemas com financiamentos e taxas.",
+      "problemasComuns": [
+        "Taxas abusivas no meu financiamento",
+        "Fizeram um financiamento no meu nome que eu não contratei",
+        "Estão me cobrando algo que eu já paguei"
+      ]
+    }
+  ]
+}
