@@ -29,6 +29,8 @@ app.post('/lead', async (req, res) => {
   const {
     nome,
     telefone,
+    cpf,
+    email,
     area,
     respostaQualificacao,
     utm_source,
@@ -47,13 +49,15 @@ app.post('/lead', async (req, res) => {
 
   await pool.query(
     `INSERT INTO leads (
-      nome, telefone, area_atuacao, resposta_qualificacao,
+      nome, telefone, cpf, email, area_atuacao, resposta_qualificacao,
       utm_source, utm_medium, utm_campaign, utm_content, utm_term,
       gclid, fbclid, pagina_origem
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
     [
       nome,
       telefone,
+      cpf || null,
+      email || null,
       area || null,
       respostaQualificacao || null,
       utm_source || null,

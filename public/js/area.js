@@ -25,6 +25,19 @@ document.addEventListener('DOMContentLoaded', function () {
       lista.appendChild(li);
     });
 
+    var formularioConfig = config.formulario || {};
+    document.getElementById('label-nome').textContent = formularioConfig.labelNome || 'Seu nome';
+
+    if (formularioConfig.coletarCpf) {
+      document.getElementById('cpf-wrap').style.display = 'block';
+      document.getElementById('cpf').required = true;
+    }
+
+    if (formularioConfig.coletarEmail) {
+      document.getElementById('email-wrap').style.display = 'block';
+      document.getElementById('email').required = true;
+    }
+
     var qualificacaoWrap = document.getElementById('qualificacao-wrap');
     if (area.perguntaQualificacao) {
       var label = document.createElement('label');
@@ -63,6 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var nome = document.getElementById('nome').value.trim();
       var telefone = document.getElementById('telefone').value.trim();
+      var cpfInput = document.getElementById('cpf');
+      var emailInput = document.getElementById('email');
       var respostaSelect = document.getElementById('resposta-qualificacao');
       var respostaQualificacao = respostaSelect ? respostaSelect.value : null;
       var utm = Utm.obter();
@@ -73,6 +88,8 @@ document.addEventListener('DOMContentLoaded', function () {
         body: JSON.stringify({
           nome: nome,
           telefone: telefone,
+          cpf: cpfInput ? cpfInput.value.trim() : null,
+          email: emailInput ? emailInput.value.trim() : null,
           area: area.slug,
           respostaQualificacao: respostaQualificacao,
           utm_source: utm.utm_source,
