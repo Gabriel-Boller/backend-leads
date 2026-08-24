@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const { Pool } = require('pg');
 
@@ -10,26 +12,70 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+const siteConfig = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'config', 'site.config.json'), 'utf-8')
+);
+
+async function garantirEsquema() {
+  await pool.query(fs.readFileSync(path.join(__dirname, 'db', 'schema.sql'), 'utf-8'));
+}
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/config', express.static(path.join(__dirname, 'config')));
 
 app.post('/lead', async (req, res) => {
-  const { nome, telefone } = req.body;
+  const {
+    nome,
+    telefone,
+    area,
+    respostaQualificacao,
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    utm_content,
+    utm_term,
+    gclid,
+    fbclid,
+    paginaOrigem
+  } = req.body;
 
   if (!nome || !telefone) {
     return res.status(400).json({ erro: 'nome e telefone são obrigatórios' });
   }
 
   await pool.query(
-    'INSERT INTO leads (nome, telefone, data) VALUES ($1, $2, $3)',
-    [nome, telefone, new Date().toISOString()]
+    `INSERT INTO leads (
+      nome, telefone, area_atuacao, resposta_qualificacao,
+      utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+      gclid, fbclid, pagina_origem
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    [
+      nome,
+      telefone,
+      area || null,
+      respostaQualificacao || null,
+      utm_source || null,
+      utm_medium || null,
+      utm_campaign || null,
+      utm_content || null,
+      utm_term || null,
+      gclid || null,
+      fbclid || null,
+      paginaOrigem || null
+    ]
   );
 
-  const mensagem = encodeURIComponent('Ola ' + nome + ', tudo bem?');
-  const numero = telefone.replace(/\D/g, '');
-  const whatsappUrl = 'https://wa.me/55' + numero + '?text=' + mensagem;
+  const areaConfig = siteConfig.areasDeAtuacao.find((a) => a.slug === area);
+  const areaTitulo = areaConfig ? areaConfig.titulo : 'sua solicitação';
+  const mensagem = encodeURIComponent(
+    `Olá, meu nome é ${nome}. Vim pelo site e preciso de ajuda com ${areaTitulo}.`
+  );
+  const numero = siteConfig.advogado.whatsapp.replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${numero}?text=${mensagem}`;
 
-  res.json({ sucesso: true, whatsappUrl: whatsappUrl });
+  res.json({ sucesso: true, whatsappUrl });
 });
 
 app.get('/leads', async (req, res) => {
@@ -37,6 +83,11 @@ app.get('/leads', async (req, res) => {
   res.json(result.rows);
 });
 
-app.listen(PORT, function() {
-  console.log('Servidor rodando na porta ' + PORT);
-});
+async function iniciar() {
+  await garantirEsquema();
+  app.listen(PORT, () => {
+    console.log('Servidor rodando na porta ' + PORT);
+  });
+}
+
+iniciar();

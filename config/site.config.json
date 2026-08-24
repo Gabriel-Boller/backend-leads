@@ -1,0 +1,97 @@
+{
+  "advogado": {
+    "nome": "Dr. Exemplo da Silva",
+    "oab": "OAB/SP 000.000",
+    "whatsapp": "5511999999999",
+    "cidade": "São Paulo - SP"
+  },
+  "tema": {
+    "nomeSite": "Escritório Exemplo Advocacia",
+    "corPrimaria": "#0B3D2E",
+    "corSecundaria": "#C9A227",
+    "logoUrl": ""
+  },
+  "tracking": {
+    "ga4Id": "",
+    "metaPixelId": "",
+    "googleAdsId": ""
+  },
+  "areasDeAtuacao": [
+    {
+      "slug": "trabalhista",
+      "titulo": "Direito Trabalhista",
+      "resumoCurto": "Demissão, horas extras, verbas rescisórias e assédio no trabalho.",
+      "problemasComuns": [
+        "Fui demitido e não recebi o que tinha direito",
+        "Não pagam minhas horas extras",
+        "Sofri assédio moral ou constrangimento no trabalho",
+        "Meu contrato foi encerrado sem justa causa"
+      ],
+      "perguntaQualificacao": {
+        "label": "Qual situação mais se parece com a sua?",
+        "opcoes": [
+          "Fui demitido recentemente",
+          "Ainda estou empregado(a)",
+          "Já saí há mais de 2 anos"
+        ]
+      }
+    },
+    {
+      "slug": "familia",
+      "titulo": "Direito de Família",
+      "resumoCurto": "Divórcio, pensão alimentícia, guarda de filhos e partilha de bens.",
+      "problemasComuns": [
+        "Quero me divorciar e não sei por onde começar",
+        "Preciso resolver a pensão alimentícia dos meus filhos",
+        "Estou em disputa pela guarda dos filhos",
+        "Preciso dividir bens após a separação"
+      ],
+      "perguntaQualificacao": {
+        "label": "Qual situação mais se parece com a sua?",
+        "opcoes": [
+          "Ainda não iniciei o processo",
+          "Já estou em processo",
+          "Quero apenas entender meus direitos"
+        ]
+      }
+    },
+    {
+      "slug": "criminal",
+      "titulo": "Direito Criminal",
+      "resumoCurto": "Defesa criminal, inquéritos, audiências e liberdade provisória.",
+      "problemasComuns": [
+        "Fui intimado para prestar depoimento",
+        "Preciso de defesa em um processo criminal",
+        "Um familiar foi preso e preciso de ajuda",
+        "Recebi uma notificação da polícia ou do Ministério Público"
+      ],
+      "perguntaQualificacao": {
+        "label": "Qual situação mais se parece com a sua?",
+        "opcoes": [
+          "É urgente (prazo ou audiência próxima)",
+          "Ainda estou entendendo a situação",
+          "É sobre um familiar ou terceiro"
+        ]
+      }
+    },
+    {
+      "slug": "consumidor",
+      "titulo": "Direito do Consumidor",
+      "resumoCurto": "Cobranças indevidas, produtos com defeito e negativação injusta.",
+      "problemasComuns": [
+        "Fui negativado sem dever nada",
+        "Comprei um produto com defeito e não resolveram",
+        "Estou sendo cobrado indevidamente por uma empresa",
+        "Cancelaram meu serviço e não devolveram o dinheiro"
+      ],
+      "perguntaQualificacao": {
+        "label": "Qual situação mais se parece com a sua?",
+        "opcoes": [
+          "Meu nome está negativado",
+          "Quero cancelar uma cobrança",
+          "Quero trocar ou ser ressarcido por um produto"
+        ]
+      }
+    }
+  ]
+}
