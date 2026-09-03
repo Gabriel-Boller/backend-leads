@@ -378,6 +378,14 @@ label.chip:has(input:checked) {
   background: var(--success-bg);
   border-color: var(--success);
 }
+.task-item.horario-atual {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.task-item.horario-atrasado {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
 .check-circle {
   width: 26px;
   height: 26px;
@@ -670,6 +678,73 @@ small.hint {
   color: var(--danger);
   font-size: 13px;
   margin: 8px 0 0;
+}
+
+.celebracao {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 26px 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, var(--accent), var(--bg-soft));
+  border: 1.5px solid var(--accent-strong);
+  margin-bottom: 16px;
+  animation: celebracao-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.celebracao-emoji {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 6px;
+  animation: celebracao-bounce 1.1s ease-in-out infinite;
+}
+.celebracao-titulo {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin: 0 0 2px;
+}
+.celebracao-sub {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.confete {
+  position: absolute;
+  top: -14px;
+  font-size: 16px;
+  animation-name: confete-cair;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+@keyframes celebracao-pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes celebracao-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes confete-cair {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(160px) rotate(340deg);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 640px) {

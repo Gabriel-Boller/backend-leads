@@ -39,3 +39,28 @@ export function diffDays(a: Date, b: Date): number {
   const pb = new Date(b.getFullYear(), b.getMonth(), b.getDate());
   return Math.round((pa.getTime() - pb.getTime()) / 86400000);
 }
+
+export type Periodo = "hoje" | "7dias" | "mes" | "mes_passado" | "personalizado";
+
+/** Converte um período nomeado (ou datas personalizadas) num intervalo [de, ate] em ISO. */
+export function periodoParaRange(periodo: Periodo, deCustom?: string, ateCustom?: string): { de: string; ate: string } {
+  const hoje = new Date();
+  if (periodo === "hoje") {
+    const iso = todayISO();
+    return { de: iso, ate: iso };
+  }
+  if (periodo === "mes") {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    return { de: isoDate(inicio), ate: todayISO() };
+  }
+  if (periodo === "mes_passado") {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+    return { de: isoDate(inicio), ate: isoDate(fim) };
+  }
+  if (periodo === "personalizado" && deCustom && ateCustom) {
+    return { de: deCustom, ate: ateCustom };
+  }
+  // "7dias" e fallback
+  return { de: isoDate(daysAgo(6)), ate: todayISO() };
+}

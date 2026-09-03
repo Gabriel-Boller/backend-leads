@@ -66,6 +66,24 @@ export function tarefaAtrasadaAgora(tarefa: TarefaHorario, agora: Date): boolean
   return agora > limite;
 }
 
+export type EstadoTarefa = "neutra" | "na_hora" | "atrasada";
+
+/**
+ * Estado visual de uma tarefa agora: sem horário definido é sempre "neutra";
+ * com horário, fica "neutra" antes do início, "na_hora" durante a janela
+ * (ou o dia todo até o fim, se não tiver início definido) e "atrasada" depois do fim.
+ */
+export function estadoTarefaAgora(tarefa: TarefaHorario, agora: Date): EstadoTarefa {
+  if (!tarefa.horarioInicio && !tarefa.horarioFim) return "neutra";
+  if (tarefaAtrasadaAgora(tarefa, agora)) return "atrasada";
+  if (tarefa.horarioInicio) {
+    const [h, m] = tarefa.horarioInicio.split(":").map(Number);
+    const inicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), h, m);
+    if (agora < inicio) return "neutra";
+  }
+  return "na_hora";
+}
+
 export function escalaLabel(u: UsuarioEscala): string {
   if (u.escalaTipo === "DIAS_SEMANA") return u.diasSemana.map((d) => DIAS[d]).join(", ") || "Nenhum dia definido";
   if (u.escalaTipo === "DOZE_POR_TRINTA_SEIS") {

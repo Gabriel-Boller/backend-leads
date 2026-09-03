@@ -1,10 +1,12 @@
 import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
-import { horarioLabel, tarefaAtrasadaAgora } from "@/lib/schedule";
+import { horarioLabel, estadoTarefaAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
 import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL } from "@/lib/dates";
-import { marcarFeitoSemFoto, desmarcarTarefa, concluirComFoto } from "./actions";
+import { marcarFeitoSemFoto, desmarcarTarefa } from "./actions";
+import CameraCapture from "@/components/CameraCapture";
+import Celebracao from "@/components/Celebracao";
 
 export default async function MinhasTarefasPage() {
   const sessao = await requirePapel(["COLABORADOR"]);
@@ -23,6 +25,22 @@ export default async function MinhasTarefasPage() {
   });
   const instanciaPorTarefa = new Map(instancias.map((i) => [i.tarefaId, i]));
 
+  const itens = esperadas
+    .map((t) => {
+      const inst = instanciaPorTarefa.get(t.id);
+      const done = !!inst;
+      const estado: EstadoTarefa = estadoTarefaAgora(t, hoje);
+      return { tarefa: t, done, inst, estado };
+    })
+    .sort((a, b) => {
+      const urgente = (x: (typeof itens)[number]) => (!x.done && (x.estado === "atrasada" || x.estado === "na_hora") ? 0 : 1);
+      return urgente(a) - urgente(b);
+    });
+
+  const total = itens.length;
+  const feitas = itens.filter((i) => i.done).length;
+  const pct = total ? Math.round((100 * feitas) / total) : 0;
+
   return (
     <>
       <h1 className="page-title">Suas tarefas de hoje</h1>
@@ -30,7 +48,26 @@ export default async function MinhasTarefasPage() {
         {fmtDatePretty(iso)} · {DIAS_SEMANA_LABEL[hoje.getDay()]}
       </p>
 
-      {esperadas.length === 0 && (
+      {total > 0 && (
+        <div className="grid grid-2" style={{ marginBottom: 16 }}>
+          <div className="stat">
+            <div className="stat-num">
+              {feitas}/{total}
+            </div>
+            <div className="stat-label">Tarefas concluídas</div>
+          </div>
+          <div className="stat">
+            <div className="stat-num">{pct}%</div>
+            <div className="stat-label">Quão perto de terminar</div>
+          </div>
+        </div>
+      )}
+
+      {total > 0 && feitas === total && (
+        <Celebracao titulo="Parabéns! Tudo concluído 🎉" sub="Você terminou todas as suas tarefas de hoje." />
+      )}
+
+      {total === 0 && (
         <div className="empty">
           <div className="empty-icon">🌤️</div>
           <p>Você não tem tarefas hoje. Aproveite!</p>
@@ -38,13 +75,12 @@ export default async function MinhasTarefasPage() {
       )}
 
       {await Promise.all(
-        esperadas.map(async (t) => {
-          const inst = instanciaPorTarefa.get(t.id);
-          const done = !!inst;
+        itens.map(async ({ tarefa: t, done, inst, estado }) => {
           const fotoUrl = inst?.fotoPath ? await urlAssinadaFoto(inst.fotoPath) : null;
+          const corClasse = done ? "done" : estado === "atrasada" ? "horario-atrasado" : estado === "na_hora" ? "horario-atual" : "";
 
           return (
-            <div key={t.id} className={`task-item ${done ? "done" : ""}`}>
+            <div key={t.id} className={`task-item ${corClasse}`}>
               {done ? (
                 <form action={desmarcarTarefa.bind(null, t.id)}>
                   <button type="submit" className="check-circle checked" aria-label="Desmarcar">
@@ -65,26 +101,17 @@ export default async function MinhasTarefasPage() {
                   {horarioLabel(t) && <span className="tag">🕐 {horarioLabel(t)}</span>}
                   {t.requerFoto && <span className="tag photo">📷 Precisa de foto</span>}
                   {done && <span className="tag ok">Concluída {inst && `às ${fmtTime(inst.concluidoEm)}`}</span>}
-                  {!done && tarefaAtrasadaAgora(t, hoje) && <span className="tag late">⏰ Atrasada</span>}
+                  {!done && estado === "atrasada" && <span className="tag late">⏰ Atrasada</span>}
+                  {!done && estado === "na_hora" && <span className="tag" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>🕐 Na hora</span>}
                 </div>
                 {done && fotoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={fotoUrl} alt="Foto enviada" className="photo-thumb" style={{ marginTop: 8 }} />
                 )}
                 {!done && t.requerFoto && (
-                  <form action={concluirComFoto.bind(null, t.id)} style={{ marginTop: 10 }}>
-                    <input
-                      type="file"
-                      name="foto"
-                      accept="image/*"
-                      capture="environment"
-                      required
-                      style={{ marginBottom: 8, fontSize: 12.5 }}
-                    />
-                    <button type="submit" className="photo-input-btn">
-                      📷 Enviar foto e concluir
-                    </button>
-                  </form>
+                  <div style={{ marginTop: 10 }}>
+                    <CameraCapture tarefaId={t.id} />
+                  </div>
                 )}
               </div>
             </div>

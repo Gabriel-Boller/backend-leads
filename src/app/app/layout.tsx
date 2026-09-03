@@ -1,6 +1,7 @@
 import { requireUsuario } from "@/lib/auth";
 import { lojaIdsVisiveis } from "@/lib/escopo";
 import { calcAlertas } from "@/lib/alertas";
+import { isoDate, daysAgo, todayISO } from "@/lib/dates";
 import Tabs from "@/components/Tabs";
 import { sair } from "./actions";
 
@@ -16,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let alertCount = 0;
   if (user.papel !== "COLABORADOR") {
     const lojaIds = await lojaIdsVisiveis(user);
-    alertCount = (await calcAlertas(lojaIds)).length;
+    alertCount = (await calcAlertas(lojaIds, isoDate(daysAgo(6)), todayISO())).length;
   }
 
   return (

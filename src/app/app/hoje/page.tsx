@@ -2,7 +2,7 @@ import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { lojaIdsVisiveis } from "@/lib/escopo";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario, type TarefaComAtribuicoes } from "@/lib/tarefas";
-import { tarefaAtrasadaAgora } from "@/lib/schedule";
+import { estadoTarefaAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
 import { todayISO, fromIsoDate, fmtDatePretty } from "@/lib/dates";
 import LojaFilterSelect from "@/components/LojaFilterSelect";
@@ -57,9 +57,14 @@ export default async function HojePage({
           totalTarefas++;
           if (inst) totalFeitas++;
           const fotoUrl = inst?.fotoPath ? await urlAssinadaFoto(inst.fotoPath) : null;
-          return { tarefa: t, feita: !!inst, fotoUrl };
+          const estado: EstadoTarefa = estadoTarefaAgora(t, hoje);
+          return { tarefa: t, feita: !!inst, fotoUrl, estado };
         })
       );
+      itens.sort((a, b) => {
+        const urgente = (x: (typeof itens)[number]) => (!x.feita && (x.estado === "atrasada" || x.estado === "na_hora") ? 0 : 1);
+        return urgente(a) - urgente(b);
+      });
       return { colaborador: c, folga: false, itens };
     })
   );
@@ -114,10 +119,12 @@ export default async function HojePage({
               Sem tarefas atribuídas hoje
             </p>
           ) : (
-            l.itens.map((i) => (
+            l.itens.map((i) => {
+              const corClasse = i.feita ? "done" : i.estado === "atrasada" ? "horario-atrasado" : i.estado === "na_hora" ? "horario-atual" : "";
+              return (
               <div
                 key={i.tarefa.id}
-                className={`task-item ${i.feita ? "done" : ""}`}
+                className={`task-item ${corClasse}`}
                 style={{ marginBottom: 6, padding: "10px 12px" }}
               >
                 <div className={`check-circle ${i.feita ? "checked" : ""}`} style={{ width: 20, height: 20 }}>
@@ -129,7 +136,8 @@ export default async function HojePage({
                   </p>
                   <div className="task-meta">
                     {i.tarefa.requerFoto && <span className="tag photo">📷</span>}
-                    {!i.feita && tarefaAtrasadaAgora(i.tarefa, hoje) && <span className="tag late">⏰ Atrasada</span>}
+                    {!i.feita && i.estado === "atrasada" && <span className="tag late">⏰ Atrasada</span>}
+                    {!i.feita && i.estado === "na_hora" && <span className="tag" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>🕐 Na hora</span>}
                     {i.feita && i.fotoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={i.fotoUrl} alt="Foto enviada" className="photo-thumb" />
@@ -137,7 +145,8 @@ export default async function HojePage({
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       ))}
