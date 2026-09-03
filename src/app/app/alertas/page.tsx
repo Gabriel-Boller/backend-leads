@@ -11,7 +11,7 @@ export default async function AlertasPage() {
   return (
     <>
       <h1 className="page-title">Alertas</h1>
-      <p className="page-sub">Tarefas de dias anteriores que ficaram sem conclusão</p>
+      <p className="page-sub">Tarefas atrasadas hoje (depois do horário) ou sem conclusão em dias anteriores</p>
 
       {alertas.length === 0 ? (
         <div className="empty">

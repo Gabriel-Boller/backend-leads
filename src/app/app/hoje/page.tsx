@@ -2,6 +2,7 @@ import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { lojaIdsVisiveis } from "@/lib/escopo";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario, type TarefaComAtribuicoes } from "@/lib/tarefas";
+import { tarefaAtrasadaAgora } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
 import { todayISO, fromIsoDate, fmtDatePretty } from "@/lib/dates";
 import LojaFilterSelect from "@/components/LojaFilterSelect";
@@ -128,6 +129,7 @@ export default async function HojePage({
                   </p>
                   <div className="task-meta">
                     {i.tarefa.requerFoto && <span className="tag photo">📷</span>}
+                    {!i.feita && tarefaAtrasadaAgora(i.tarefa, hoje) && <span className="tag late">⏰ Atrasada</span>}
                     {i.feita && i.fotoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={i.fotoUrl} alt="Foto enviada" className="photo-thumb" />

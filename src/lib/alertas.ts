@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { isoDate, daysAgo } from "@/lib/dates";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
+import { tarefaAtrasadaAgora } from "@/lib/schedule";
 
 export type Alerta = {
   usuarioId: string;
@@ -39,8 +40,10 @@ export async function calcAlertas(lojaIds: string[]): Promise<Alerta[]> {
   });
   const feitos = new Set(instancias.map((i) => `${i.tarefaId}__${i.usuarioId}__${isoDate(i.data)}`));
 
+  const agora = new Date();
   const alertas: Alerta[] = [];
-  for (let i = 1; i <= DIAS_PARA_TRAS; i++) {
+  // i=0 é hoje: só entra como pendência depois do horário-fim da tarefa (quando ela tem um definido).
+  for (let i = 0; i <= DIAS_PARA_TRAS; i++) {
     const d = daysAgo(i);
     const iso = isoDate(d);
     for (const colaborador of colaboradores) {
@@ -48,6 +51,7 @@ export async function calcAlertas(lojaIds: string[]): Promise<Alerta[]> {
       const tarefasDaLoja = tarefasPorLoja.get(colaborador.lojaId) || [];
       const esperadas = tarefasEsperadasParaUsuario(colaborador, d, tarefasDaLoja);
       for (const t of esperadas) {
+        if (i === 0 && !tarefaAtrasadaAgora(t, agora)) continue;
         if (!feitos.has(`${t.id}__${colaborador.id}__${iso}`)) {
           alertas.push({
             usuarioId: colaborador.id,

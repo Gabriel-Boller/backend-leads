@@ -9,12 +9,20 @@ import type { Papel } from "@prisma/client";
 const SESSION_COOKIE = "sessao";
 const SESSION_DAYS = 90;
 
-export async function hashPin(pin: string): Promise<string> {
-  return bcrypt.hash(pin, 10);
+export async function hashSenha(senha: string): Promise<string> {
+  return bcrypt.hash(senha, 10);
 }
 
-export async function verifyPin(pin: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(pin, hash);
+export async function verifySenha(senha: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(senha, hash);
+}
+
+/** Autentica por e-mail + senha. Retorna o usuário (ativo) se as credenciais baterem. */
+export async function autenticar(email: string, senha: string) {
+  const usuario = await prisma.usuario.findUnique({ where: { email: email.trim().toLowerCase() } });
+  if (!usuario || !usuario.ativo) return null;
+  const ok = await verifySenha(senha, usuario.senhaHash);
+  return ok ? usuario : null;
 }
 
 function hashToken(token: string): string {

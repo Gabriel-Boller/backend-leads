@@ -7,8 +7,8 @@ relatórios.
 - **Stack:** Next.js (App Router) + TypeScript + Prisma + PostgreSQL (Supabase)
   + Supabase Storage (fotos) + sessão própria (PIN com hash bcrypt, cookie
     httpOnly).
-- **Login:** nome + PIN numérico (sem e-mail/senha), fluxo "sou dono" ou "sou
-  líder/colaborador de uma loja".
+- **Login:** e-mail + senha (cada usuário tem seu próprio e-mail/senha, além de
+  nome, contato e — se for colaborador — a escala de trabalho).
 
 ## 1. Criar o projeto no Supabase
 
@@ -33,27 +33,30 @@ cp .env.example .env
 # preencha .env com os valores do passo 1
 npm install
 npm run db:push      # cria as tabelas no banco a partir de prisma/schema.prisma
-npm run db:seed      # cria o primeiro usuário "dono" (nome/PIN do .env)
+npm run db:seed      # cria o primeiro usuário "dono" (dados do .env)
 npm run dev
 ```
 
-Abra `http://localhost:3000`, entre como "Sou o dono" e use o nome/PIN
-definidos em `SEED_DONO_NOME` / `SEED_DONO_PIN` do `.env`.
+Abra `http://localhost:3000` e entre com o e-mail/senha definidos em
+`SEED_DONO_EMAIL` / `SEED_DONO_SENHA` do `.env`.
 
 ## 3. Fluxo básico de uso
 
-1. **Dono** faz login → aba "Equipe" → cria as lojas → cria os líderes de
-   cada loja (nome + PIN).
-2. **Líder** faz login (via "Sou líder ou colaborador") → aba
-   "Colaboradores" → cadastra os colaboradores da sua loja (nome + PIN +
-   escala: todos os dias, dias fixos da semana, ou 12x36).
+1. **Dono** faz login → aba "Equipe" → cria as lojas → cria os líderes e/ou
+   colaboradores de cada loja (nome, contato, e-mail, senha e, pra
+   colaborador, a escala: todos os dias, dias fixos da semana, ou 12x36).
+   Só o dono cria líderes e renomeia lojas.
+2. **Líder** faz login com seu e-mail/senha → aba "Colaboradores" → cadastra
+   os colaboradores da própria loja.
 3. **Líder/Dono** → aba "Tarefas" → cria as tarefas (recorrência diária,
-   semanal ou mensal; atribuição para todos ou colaboradores específicos;
-   se exige foto para concluir).
+   semanal, mensal ou datas específicas escolhidas num calendário;
+   atribuição para todos ou colaboradores específicos; horário opcional —
+   depois do horário-fim, a tarefa do dia vira "atrasada"; se exige foto
+   para concluir).
 4. **Colaborador** faz login → aba "Minhas tarefas" → marca como feito ou
    envia foto, conforme exigido.
 5. **Líder/Dono** acompanham em "Hoje" (progresso do dia), "Relatórios"
-   (histórico filtrável com fotos) e "Alertas" (pendências dos últimos dias).
+   (histórico filtrável com fotos) e "Alertas" (pendências).
 
 ## Scripts úteis
 

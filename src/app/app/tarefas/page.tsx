@@ -1,7 +1,7 @@
 import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { lojaIdsVisiveis } from "@/lib/escopo";
-import { freqLabel } from "@/lib/schedule";
+import { freqLabel, horarioLabel } from "@/lib/schedule";
 import TarefaFormModal from "@/components/TarefaFormModal";
 import ConfirmForm from "@/components/ConfirmForm";
 import { excluirTarefa } from "./actions";
@@ -78,6 +78,7 @@ export default async function TarefasPage() {
           <div className="task-meta">
             {user.papel === "DONO" && <span className="tag">{lojaNomePorId.get(t.lojaId) || "—"}</span>}
             <span className="tag">{freqLabel(t)}</span>
+            {horarioLabel(t) && <span className="tag">🕐 {horarioLabel(t)}</span>}
             <span className="tag">
               {t.atribuidoATodos ? "Todos os colaboradores" : `${t.atribuicoes.length} colaborador(es)`}
             </span>

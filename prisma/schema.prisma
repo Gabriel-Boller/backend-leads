@@ -24,6 +24,7 @@ enum FrequenciaTipo {
   DIARIA
   SEMANAL
   MENSAL
+  PERSONALIZADA
 }
 
 model Loja {
@@ -38,8 +39,10 @@ model Loja {
 model Usuario {
   id             String     @id @default(cuid())
   nome           String
+  email          String     @unique
+  senhaHash      String
+  contato        String?
   papel          Papel
-  pinHash        String
   ativo          Boolean    @default(true)
   createdAt      DateTime   @default(now())
 
@@ -69,9 +72,13 @@ model Tarefa {
   ativo           Boolean        @default(true)
   createdAt       DateTime       @default(now())
 
-  frequenciaTipo  FrequenciaTipo
-  diasSemana      Int[]          @default([]) // usado quando SEMANAL
-  diaDoMes        Int?           // usado quando MENSAL
+  frequenciaTipo    FrequenciaTipo
+  diasSemana        Int[]          @default([]) // usado quando SEMANAL
+  diaDoMes          Int?           // usado quando MENSAL
+  datasEspecificas  DateTime[]     @default([]) @db.Date // usado quando PERSONALIZADA
+
+  horarioInicio   String?        // "HH:MM", opcional
+  horarioFim      String?        // "HH:MM" — depois desse horário a tarefa do dia vira atrasada
 
   atribuidoATodos Boolean        @default(true)
   atribuicoes     TarefaAtribuicao[]

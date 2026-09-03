@@ -1,6 +1,7 @@
 import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
+import { horarioLabel, tarefaAtrasadaAgora } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
 import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL } from "@/lib/dates";
 import { marcarFeitoSemFoto, desmarcarTarefa, concluirComFoto } from "./actions";
@@ -61,8 +62,10 @@ export default async function MinhasTarefasPage() {
                 <p className="task-title">{t.titulo}</p>
                 {t.descricao && <p className="task-desc">{t.descricao}</p>}
                 <div className="task-meta">
+                  {horarioLabel(t) && <span className="tag">🕐 {horarioLabel(t)}</span>}
                   {t.requerFoto && <span className="tag photo">📷 Precisa de foto</span>}
                   {done && <span className="tag ok">Concluída {inst && `às ${fmtTime(inst.concluidoEm)}`}</span>}
+                  {!done && tarefaAtrasadaAgora(t, hoje) && <span className="tag late">⏰ Atrasada</span>}
                 </div>
                 {done && fotoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element

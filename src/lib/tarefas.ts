@@ -13,6 +13,9 @@ export type TarefaComAtribuicoes = {
   frequenciaTipo: FrequenciaTipo;
   diasSemana: number[];
   diaDoMes: number | null;
+  datasEspecificas: Date[];
+  horarioInicio: string | null;
+  horarioFim: string | null;
   atribuidoATodos: boolean;
   atribuicoes: { usuarioId: string }[];
 };

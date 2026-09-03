@@ -22,6 +22,9 @@ export async function salvarTarefa(formData: FormData) {
   const diasSemana = formData.getAll("diasSemana").map((v) => Number(v));
   const diaDoMesRaw = formData.get("diaDoMes");
   const diaDoMes = diaDoMesRaw ? Number(diaDoMesRaw) : null;
+  const datasEspecificas = formData.getAll("datasEspecificas").map((v) => new Date(String(v)));
+  const horarioInicio = String(formData.get("horarioInicio") || "").trim() || null;
+  const horarioFim = String(formData.get("horarioFim") || "").trim() || null;
   const atribuidoATodos = formData.get("atribuidoATodos") === "todos";
   const colaboradorIds = formData.getAll("colaboradorIds").map((v) => String(v));
   const requerFoto = formData.get("requerFoto") != null;
@@ -38,6 +41,9 @@ export async function salvarTarefa(formData: FormData) {
     frequenciaTipo,
     diasSemana: frequenciaTipo === "SEMANAL" ? diasSemana : [],
     diaDoMes: frequenciaTipo === "MENSAL" ? diaDoMes : null,
+    datasEspecificas: frequenciaTipo === "PERSONALIZADA" ? datasEspecificas : [],
+    horarioInicio,
+    horarioFim,
     atribuidoATodos,
   };
 

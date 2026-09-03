@@ -9,6 +9,8 @@ const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export type UsuarioEdit = {
   id: string;
   nome: string;
+  email: string;
+  contato: string | null;
   escalaTipo: "TODOS" | "DIAS_SEMANA" | "DOZE_POR_TRINTA_SEIS";
   diasSemana: number[];
   escalaDataBase: Date | null;
@@ -44,8 +46,16 @@ export default function UsuarioFormModal({
             <input type="text" name="nome" defaultValue={usuario?.nome} required />
           </div>
           <div className="field">
-            <label>PIN de acesso (4 a 6 números){isEdit ? " — deixe em branco para manter" : ""}</label>
-            <input type="password" name="pin" inputMode="numeric" minLength={isEdit ? 0 : 4} maxLength={6} required={!isEdit} />
+            <label>Contato (telefone, opcional)</label>
+            <input type="text" name="contato" defaultValue={usuario?.contato || ""} placeholder="(00) 00000-0000" />
+          </div>
+          <div className="field">
+            <label>E-mail</label>
+            <input type="email" name="email" defaultValue={usuario?.email} required />
+          </div>
+          <div className="field">
+            <label>Senha{isEdit ? " — deixe em branco para manter" : ""}</label>
+            <input type="password" name="senha" minLength={isEdit ? 0 : 6} required={!isEdit} />
           </div>
 
           {papel === "COLABORADOR" && (

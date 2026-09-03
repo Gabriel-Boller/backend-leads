@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   const nome = process.env.SEED_DONO_NOME || "Dono";
-  const pin = process.env.SEED_DONO_PIN || "1234";
+  const email = (process.env.SEED_DONO_EMAIL || "dono@exemplo.com").toLowerCase();
+  const senha = process.env.SEED_DONO_SENHA || "mudeisso123";
 
   const existente = await prisma.usuario.findFirst({ where: { papel: "DONO" } });
   if (existente) {
@@ -13,12 +14,12 @@ async function main() {
     return;
   }
 
-  const pinHash = await bcrypt.hash(pin, 10);
+  const senhaHash = await bcrypt.hash(senha, 10);
   const dono = await prisma.usuario.create({
-    data: { nome, papel: "DONO", pinHash },
+    data: { nome, email, papel: "DONO", senhaHash },
   });
 
-  console.log(`Dono criado: ${dono.nome} (PIN: ${pin}) — troque o PIN depois de fazer login.`);
+  console.log(`Dono criado: ${dono.nome} <${dono.email}> (senha: ${senha}) — troque a senha depois de fazer login.`);
 }
 
 main()

@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requirePapel } from "@/lib/auth";
-import { hashPin } from "@/lib/auth";
+import { requirePapel, hashSenha } from "@/lib/auth";
 import type { EscalaTipo } from "@prisma/client";
 
 export async function criarLoja(formData: FormData) {
@@ -15,6 +14,19 @@ export async function criarLoja(formData: FormData) {
   revalidatePath("/app/equipe");
 }
 
+export async function editarLoja(lojaId: string, formData: FormData) {
+  await requirePapel(["DONO"]);
+  const nome = String(formData.get("nome") || "").trim();
+  if (!nome) throw new Error("Nome da loja é obrigatório.");
+
+  await prisma.loja.update({ where: { id: lojaId }, data: { nome } });
+  revalidatePath("/app/equipe");
+}
+
+function validarEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export async function salvarUsuario(formData: FormData) {
   const user = await requirePapel(["DONO", "LIDER"]);
 
@@ -22,21 +34,26 @@ export async function salvarUsuario(formData: FormData) {
   const papel = String(formData.get("papel") || "") as "LIDER" | "COLABORADOR";
   const lojaId = String(formData.get("lojaId") || "");
   const nome = String(formData.get("nome") || "").trim();
-  const pin = String(formData.get("pin") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const contato = String(formData.get("contato") || "").trim();
+  const senha = String(formData.get("senha") || "");
 
   if (!nome) throw new Error("Nome é obrigatório.");
   if (papel !== "LIDER" && papel !== "COLABORADOR") throw new Error("Papel inválido.");
   if (!lojaId) throw new Error("Loja é obrigatória.");
+  if (!validarEmail(email)) throw new Error("E-mail inválido.");
 
+  // Só o dono cria líderes; líder só gerencia colaboradores da própria loja.
+  // Dono também pode criar/editar colaboradores de qualquer loja.
   if (user.papel === "LIDER") {
-    if (papel !== "COLABORADOR") throw new Error("Líder só pode gerenciar colaboradores.");
+    if (papel !== "COLABORADOR") throw new Error("Somente o dono pode criar ou editar líderes.");
     if (lojaId !== user.lojaId) throw new Error("Você só pode gerenciar sua própria loja.");
   }
 
-  if (pin && !/^\d{4,6}$/.test(pin)) {
-    throw new Error("PIN deve ter de 4 a 6 números.");
+  if (senha && senha.length < 6) {
+    throw new Error("A senha precisa ter pelo menos 6 caracteres.");
   }
-  if (!id && !pin) throw new Error("PIN é obrigatório para criar um novo usuário.");
+  if (!id && !senha) throw new Error("Senha é obrigatória para criar um novo usuário.");
 
   const escalaTipo = (String(formData.get("escalaTipo") || "TODOS") as EscalaTipo) ?? "TODOS";
   const diasSemana = formData.getAll("diasSemana").map((v) => Number(v));
@@ -52,30 +69,41 @@ export async function salvarUsuario(formData: FormData) {
         }
       : { escalaTipo: "TODOS" as EscalaTipo, diasSemana: [], escalaDataBase: null };
 
-  if (id) {
-    const existente = await prisma.usuario.findUnique({ where: { id } });
-    if (!existente) throw new Error("Usuário não encontrado.");
-    if (user.papel === "LIDER" && (existente.papel !== "COLABORADOR" || existente.lojaId !== user.lojaId)) {
-      throw new Error("Você não tem permissão para editar esse usuário.");
+  try {
+    if (id) {
+      const existente = await prisma.usuario.findUnique({ where: { id } });
+      if (!existente) throw new Error("Usuário não encontrado.");
+      if (user.papel === "LIDER" && (existente.papel !== "COLABORADOR" || existente.lojaId !== user.lojaId)) {
+        throw new Error("Você não tem permissão para editar esse usuário.");
+      }
+      await prisma.usuario.update({
+        where: { id },
+        data: {
+          nome,
+          email,
+          contato: contato || null,
+          ...escalaFields,
+          ...(senha ? { senhaHash: await hashSenha(senha) } : {}),
+        },
+      });
+    } else {
+      await prisma.usuario.create({
+        data: {
+          nome,
+          email,
+          contato: contato || null,
+          papel,
+          lojaId,
+          senhaHash: await hashSenha(senha),
+          ...escalaFields,
+        },
+      });
     }
-    await prisma.usuario.update({
-      where: { id },
-      data: {
-        nome,
-        ...escalaFields,
-        ...(pin ? { pinHash: await hashPin(pin) } : {}),
-      },
-    });
-  } else {
-    await prisma.usuario.create({
-      data: {
-        nome,
-        papel,
-        lojaId,
-        pinHash: await hashPin(pin),
-        ...escalaFields,
-      },
-    });
+  } catch (e: unknown) {
+    if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
+      throw new Error("Já existe um usuário com esse e-mail.");
+    }
+    throw e;
   }
 
   revalidatePath("/app/equipe");

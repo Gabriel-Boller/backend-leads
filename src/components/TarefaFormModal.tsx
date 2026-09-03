@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { salvarTarefa } from "@/app/app/tarefas/actions";
+import { isoDate, fmtDatePretty } from "@/lib/dates";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -12,9 +13,12 @@ export type TarefaEdit = {
   titulo: string;
   descricao: string | null;
   requerFoto: boolean;
-  frequenciaTipo: "DIARIA" | "SEMANAL" | "MENSAL";
+  frequenciaTipo: "DIARIA" | "SEMANAL" | "MENSAL" | "PERSONALIZADA";
   diasSemana: number[];
   diaDoMes: number | null;
+  datasEspecificas: Date[];
+  horarioInicio: string | null;
+  horarioFim: string | null;
   atribuidoATodos: boolean;
   atribuicoes: { usuarioId: string }[];
 };
@@ -36,8 +40,10 @@ export default function TarefaFormModal({
 }) {
   const isEdit = !!tarefa;
   const [lojaId, setLojaId] = useState(tarefa?.lojaId || defaultLojaId);
-  const [freq, setFreq] = useState<"DIARIA" | "SEMANAL" | "MENSAL">(tarefa?.frequenciaTipo || "DIARIA");
+  const [freq, setFreq] = useState<TarefaEdit["frequenciaTipo"]>(tarefa?.frequenciaTipo || "DIARIA");
   const [atribuidoATodos, setAtribuidoATodos] = useState(tarefa ? tarefa.atribuidoATodos : true);
+  const [datas, setDatas] = useState<string[]>(tarefa?.datasEspecificas.map((d) => isoDate(new Date(d))) || []);
+  const [novaData, setNovaData] = useState("");
   const colaboradores = colaboradoresPorLoja[lojaId] || [];
   const atribuicaoIds = new Set(tarefa?.atribuicoes.map((a) => a.usuarioId));
 
@@ -74,6 +80,7 @@ export default function TarefaFormModal({
               <option value="DIARIA">Todos os dias</option>
               <option value="SEMANAL">Dias específicos da semana</option>
               <option value="MENSAL">Um dia do mês</option>
+              <option value="PERSONALIZADA">Datas específicas (calendário)</option>
             </select>
           </div>
 
@@ -97,6 +104,55 @@ export default function TarefaFormModal({
               <input type="number" name="diaDoMes" min={1} max={31} defaultValue={tarefa?.diaDoMes || 1} />
             </div>
           )}
+
+          {freq === "PERSONALIZADA" && (
+            <div className="field">
+              <label>Datas em que a tarefa precisa ser feita</label>
+              <div className="row" style={{ marginBottom: 8 }}>
+                <input type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} />
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ flex: "0 0 auto" }}
+                  onClick={() => {
+                    if (novaData && !datas.includes(novaData)) {
+                      setDatas([...datas, novaData].sort());
+                      setNovaData("");
+                    }
+                  }}
+                >
+                  + Adicionar data
+                </button>
+              </div>
+              <div className="chip-select">
+                {datas.map((d) => (
+                  <span key={d} className="chip on" style={{ cursor: "default" }}>
+                    {fmtDatePretty(d)}
+                    <button
+                      type="button"
+                      onClick={() => setDatas(datas.filter((x) => x !== d))}
+                      style={{ background: "none", border: "none", color: "inherit", marginLeft: 4, cursor: "pointer" }}
+                      aria-label={`Remover ${d}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {datas.length === 0 && <small className="hint">Nenhuma data adicionada ainda.</small>}
+              </div>
+              {datas.map((d) => (
+                <input key={d} type="hidden" name="datasEspecificas" value={d} />
+              ))}
+            </div>
+          )}
+
+          <div className="field">
+            <label>Horário (opcional — depois do horário-fim, a tarefa do dia vira &quot;atrasada&quot;)</label>
+            <div className="row">
+              <input type="time" name="horarioInicio" defaultValue={tarefa?.horarioInicio || ""} />
+              <input type="time" name="horarioFim" defaultValue={tarefa?.horarioFim || ""} />
+            </div>
+          </div>
 
           <div className="field">
             <label>Atribuir para</label>
