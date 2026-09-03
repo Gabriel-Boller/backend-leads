@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Papel {
+  DONO
+  LIDER
+  COLABORADOR
+}
+
+enum EscalaTipo {
+  TODOS
+  DIAS_SEMANA
+  DOZE_POR_TRINTA_SEIS
+}
+
+enum FrequenciaTipo {
+  DIARIA
+  SEMANAL
+  MENSAL
+}
+
+model Loja {
+  id        String   @id @default(cuid())
+  nome      String
+  createdAt DateTime @default(now())
+
+  usuarios Usuario[]
+  tarefas  Tarefa[]
+}
+
+model Usuario {
+  id             String     @id @default(cuid())
+  nome           String
+  papel          Papel
+  pinHash        String
+  ativo          Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+
+  lojaId         String?
+  loja           Loja?      @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  // escala (só relevante para colaborador)
+  escalaTipo     EscalaTipo @default(TODOS)
+  diasSemana     Int[]      @default([]) // 0=domingo .. 6=sábado
+  escalaDataBase DateTime?  @db.Date
+
+  tarefasAtribuidas TarefaAtribuicao[]
+  instancias        TarefaInstancia[]
+  sessoes           Sessao[]
+
+  @@index([lojaId])
+}
+
+model Tarefa {
+  id              String         @id @default(cuid())
+  lojaId          String
+  loja            Loja           @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  titulo          String
+  descricao       String?
+  requerFoto      Boolean        @default(false)
+  ativo           Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+
+  frequenciaTipo  FrequenciaTipo
+  diasSemana      Int[]          @default([]) // usado quando SEMANAL
+  diaDoMes        Int?           // usado quando MENSAL
+
+  atribuidoATodos Boolean        @default(true)
+  atribuicoes     TarefaAtribuicao[]
+  instancias      TarefaInstancia[]
+
+  @@index([lojaId])
+}
+
+model TarefaAtribuicao {
+  id        String  @id @default(cuid())
+  tarefaId  String
+  tarefa    Tarefa  @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([tarefaId, usuarioId])
+}
+
+// Só existe um registro quando a tarefa foi concluída naquele dia por aquela pessoa.
+// Pendência = existe expectativa (escala + recorrência) mas não existe instância.
+model TarefaInstancia {
+  id             String   @id @default(cuid())
+  tarefaId       String
+  tarefa         Tarefa   @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  data           DateTime @db.Date
+  tituloSnapshot String
+  fotoPath       String?
+  concluidoEm    DateTime @default(now())
+
+  @@unique([tarefaId, usuarioId, data])
+  @@index([usuarioId, data])
+}
+
+model Sessao {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiraEm  DateTime
+  createdAt DateTime @default(now())
+
+  @@index([usuarioId])
+}
