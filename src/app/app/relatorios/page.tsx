@@ -86,9 +86,14 @@ export default async function RelatoriosPage({
             <input type="date" name="ate" defaultValue={ate} />
           </div>
         </div>
-        <button className="btn btn-soft" style={{ marginTop: 12 }} type="submit">
-          Buscar
-        </button>
+        <div className="row" style={{ marginTop: 12 }}>
+          <button className="btn btn-soft" type="submit" style={{ flex: "0 0 auto" }}>
+            Buscar
+          </button>
+          <button className="btn btn-outline" type="submit" formAction="/app/relatorios/pdf" style={{ flex: "0 0 auto" }}>
+            📄 Exportar PDF
+          </button>
+        </div>
       </form>
 
       <div className="table-wrap">

@@ -50,11 +50,20 @@ export default async function EquipePage() {
                   <span>
                     {l.nome} <span className="pill">Líder</span>
                   </span>
-                  <ConfirmForm action={removerUsuario.bind(null, l.id)} confirmMessage={`Remover ${l.nome}?`}>
-                    <button type="submit" className="btn btn-danger btn-sm">
-                      Remover
-                    </button>
-                  </ConfirmForm>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <UsuarioFormModal
+                      trigger="Editar"
+                      triggerClassName="btn btn-outline btn-sm"
+                      papel="LIDER"
+                      lojaId={loja.id}
+                      usuario={l}
+                    />
+                    <ConfirmForm action={removerUsuario.bind(null, l.id)} confirmMessage={`Remover ${l.nome}?`}>
+                      <button type="submit" className="btn btn-danger btn-sm">
+                        Remover
+                      </button>
+                    </ConfirmForm>
+                  </div>
                 </div>
               ))}
 
