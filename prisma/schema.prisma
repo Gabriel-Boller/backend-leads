@@ -27,6 +27,25 @@ enum FrequenciaTipo {
   PERSONALIZADA
 }
 
+// Marca uma tarefa como o gatilho de abertura/fechamento do caixa da loja: ao concluir
+// essa tarefa específica, o colaborador preenche o formulário do caixa (em vez do simples
+// "marcar como feito"), e completar o formulário conclui a tarefa automaticamente.
+enum TarefaTipoEspecial {
+  NORMAL
+  ABERTURA_CAIXA
+  FECHAMENTO_CAIXA
+}
+
+enum CaixaStatus {
+  ABERTO
+  FECHADO
+}
+
+enum CaixaMovimentoTipo {
+  ENTRADA
+  SAIDA
+}
+
 model Loja {
   id        String   @id @default(cuid())
   nome      String
@@ -34,6 +53,7 @@ model Loja {
 
   usuarios Usuario[]
   tarefas  Tarefa[]
+  caixas   Caixa[]
 }
 
 model Usuario {
@@ -58,6 +78,10 @@ model Usuario {
   instancias        TarefaInstancia[]
   sessoes           Sessao[]
 
+  caixasAbertos     Caixa[]            @relation("CaixaAbertoPor")
+  caixasFechados    Caixa[]            @relation("CaixaFechadoPor")
+  caixaMovimentos   CaixaMovimento[]
+
   @@index([lojaId])
 }
 
@@ -79,6 +103,8 @@ model Tarefa {
 
   horarioInicio   String?        // "HH:MM", opcional
   horarioFim      String?        // "HH:MM" — depois desse horário a tarefa do dia vira atrasada
+
+  tipoEspecial    TarefaTipoEspecial @default(NORMAL)
 
   atribuidoATodos Boolean        @default(true)
   atribuicoes     TarefaAtribuicao[]
@@ -125,4 +151,55 @@ model Sessao {
   createdAt DateTime @default(now())
 
   @@index([usuarioId])
+}
+
+// Uma sessão de caixa de uma loja: aberta por alguém (colaborador ou líder), que é a
+// única pessoa autorizada a lançar entradas/saídas e fechar esse caixa. Só pode haver
+// um caixa ABERTO por loja por vez — a abertura do próximo depende do fechamento deste.
+model Caixa {
+  id     String      @id @default(cuid())
+  lojaId String
+  loja   Loja        @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  status CaixaStatus @default(ABERTO)
+
+  abertoPorId   String
+  abertoPor     Usuario  @relation("CaixaAbertoPor", fields: [abertoPorId], references: [id])
+  abertoEm      DateTime @default(now())
+  valorAbertura Decimal  @db.Decimal(10, 2)
+  obsAbertura   String?
+
+  fechadoPorId  String?
+  fechadoPor    Usuario?  @relation("CaixaFechadoPor", fields: [fechadoPorId], references: [id])
+  fechadoEm     DateTime?
+  valorContado  Decimal?  @db.Decimal(10, 2)
+  // Snapshot calculado no momento do fechamento (abertura + entradas - saídas), pra não
+  // depender de recomputar os movimentos depois. A diferença é valorContado - valorEsperado.
+  valorEsperado Decimal?  @db.Decimal(10, 2)
+  diferenca     Decimal?  @db.Decimal(10, 2)
+  // Estimativa de "quanto foi vendido" (entradas - saídas) com base só nos lançamentos de
+  // caixa — enquanto não há integração com um sistema de vendas de verdade, é o número que
+  // o dono usa pra depois conferir contra as vendas reais.
+  vendaEstimada Decimal?  @db.Decimal(10, 2)
+  obsFechamento String?
+  // true quando o dono/líder precisou fechar no lugar de quem abriu (ausência, esquecimento etc).
+  fechamentoForcado Boolean @default(false)
+
+  movimentos CaixaMovimento[]
+
+  @@index([lojaId, status])
+}
+
+model CaixaMovimento {
+  id      String @id @default(cuid())
+  caixaId String
+  caixa   Caixa  @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+
+  tipo       CaixaMovimentoTipo
+  usuarioId  String
+  usuario    Usuario            @relation(fields: [usuarioId], references: [id])
+  valor      Decimal            @db.Decimal(10, 2)
+  observacao String?
+  criadoEm   DateTime           @default(now())
+
+  @@index([caixaId])
 }

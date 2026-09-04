@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { trabalhaNoDia, tarefaAplicaNoDia } from "@/lib/schedule";
 import { isoDate } from "@/lib/dates";
-import type { EscalaTipo, FrequenciaTipo } from "@prisma/client";
+import type { EscalaTipo, FrequenciaTipo, TarefaTipoEspecial } from "@prisma/client";
 
 export type TarefaComAtribuicoes = {
   id: string;
@@ -18,6 +18,7 @@ export type TarefaComAtribuicoes = {
   datasEspecificas: Date[];
   horarioInicio: string | null;
   horarioFim: string | null;
+  tipoEspecial: TarefaTipoEspecial;
   atribuidoATodos: boolean;
   atribuicoes: { usuarioId: string; createdAt: Date }[];
 };

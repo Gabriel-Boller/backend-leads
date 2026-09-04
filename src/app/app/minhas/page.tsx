@@ -3,10 +3,13 @@ import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
 import { horarioLabel, estadoTarefaAgora, tarefaDisponivelAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
+import { caixaAbertoDaLoja, resumoCaixa } from "@/lib/caixa";
 import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL, agoraNaLoja } from "@/lib/dates";
 import { marcarFeitoSemFoto, desmarcarTarefa } from "./actions";
 import CameraCapture from "@/components/CameraCapture";
 import Celebracao from "@/components/Celebracao";
+import AbrirCaixaModal from "@/components/caixa/AbrirCaixaModal";
+import FecharCaixaModal from "@/components/caixa/FecharCaixaModal";
 
 export default async function MinhasTarefasPage() {
   const sessao = await requirePapel(["COLABORADOR"]);
@@ -40,6 +43,9 @@ export default async function MinhasTarefasPage() {
   const total = itens.length;
   const feitas = itens.filter((i) => i.done).length;
   const pct = total ? Math.round((100 * feitas) / total) : 0;
+
+  const temTarefaCaixa = itens.some((i) => i.tarefa.tipoEspecial !== "NORMAL");
+  const caixaAberto = temTarefaCaixa && usuario.lojaId ? await caixaAbertoDaLoja(usuario.lojaId) : null;
 
   return (
     <>
@@ -92,18 +98,29 @@ export default async function MinhasTarefasPage() {
           const fotoUrl = inst?.fotoPath ? await urlAssinadaFoto(inst.fotoPath) : null;
           const corClasse = done ? "done" : estado === "atrasada" ? "horario-atrasado" : estado === "na_hora" ? "horario-atual" : "";
           const disponivel = done || tarefaDisponivelAgora(t, hoje);
+          const ehCaixa = t.tipoEspecial !== "NORMAL";
 
           return (
             <div key={t.id} className={`task-item ${corClasse}`}>
               {done ? (
-                <form action={desmarcarTarefa.bind(null, t.id)}>
-                  <button type="submit" className="check-circle checked" aria-label="Desmarcar">
+                ehCaixa ? (
+                  <div className="check-circle checked" aria-label="Concluída">
                     ✓
-                  </button>
-                </form>
+                  </div>
+                ) : (
+                  <form action={desmarcarTarefa.bind(null, t.id)}>
+                    <button type="submit" className="check-circle checked" aria-label="Desmarcar">
+                      ✓
+                    </button>
+                  </form>
+                )
               ) : !disponivel ? (
                 <div className="check-circle" style={{ opacity: 0.4 }} aria-label="Ainda não disponível">
                   🔒
+                </div>
+              ) : ehCaixa ? (
+                <div className="check-circle" style={{ opacity: 0.4 }} aria-label="Concluída pelo caixa">
+                  🧾
                 </div>
               ) : t.requerFoto ? (
                 <div className="check-circle" />
@@ -117,7 +134,7 @@ export default async function MinhasTarefasPage() {
                 {t.descricao && <p className="task-desc">{t.descricao}</p>}
                 <div className="task-meta">
                   {horarioLabel(t) && <span className="tag">🕐 {horarioLabel(t)}</span>}
-                  {t.requerFoto && <span className="tag photo">📷 Precisa de foto</span>}
+                  {t.requerFoto && !ehCaixa && <span className="tag photo">📷 Precisa de foto</span>}
                   {done && <span className="tag ok">Concluída {inst && `às ${fmtTime(inst.concluidoEm)}`}</span>}
                   {!done && estado === "atrasada" && <span className="tag late">⏰ Atrasada</span>}
                   {!done && estado === "na_hora" && <span className="tag" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>🕐 Na hora</span>}
@@ -131,9 +148,41 @@ export default async function MinhasTarefasPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={fotoUrl} alt="Foto enviada" className="photo-thumb" style={{ marginTop: 8 }} />
                 )}
-                {!done && disponivel && t.requerFoto && (
+                {!done && disponivel && t.requerFoto && !ehCaixa && (
                   <div style={{ marginTop: 10 }}>
                     <CameraCapture tarefaId={t.id} />
+                  </div>
+                )}
+                {!done && disponivel && ehCaixa && t.tipoEspecial === "ABERTURA_CAIXA" && (
+                  <div style={{ marginTop: 10 }}>
+                    {caixaAberto ? (
+                      <p className="task-desc" style={{ margin: 0 }}>
+                        🔒 Já existe um caixa aberto (por {caixaAberto.abertoPor.nome} às {fmtTime(caixaAberto.abertoEm)}) — feche-o
+                        antes de abrir outro.
+                      </p>
+                    ) : (
+                      <AbrirCaixaModal trigger="🧾 Abrir caixa e concluir" triggerClassName="photo-input-btn" />
+                    )}
+                  </div>
+                )}
+                {!done && disponivel && ehCaixa && t.tipoEspecial === "FECHAMENTO_CAIXA" && (
+                  <div style={{ marginTop: 10 }}>
+                    {!caixaAberto ? (
+                      <p className="task-desc" style={{ margin: 0 }}>
+                        Nenhum caixa aberto para fechar ainda.
+                      </p>
+                    ) : caixaAberto.abertoPorId !== usuario.id ? (
+                      <p className="task-desc" style={{ margin: 0 }}>
+                        Só quem abriu o caixa ({caixaAberto.abertoPor.nome}) pode fechá-lo.
+                      </p>
+                    ) : (
+                      <FecharCaixaModal
+                        caixaId={caixaAberto.id}
+                        valorEsperado={resumoCaixa(caixaAberto).valorEsperado}
+                        trigger="🧾 Fechar caixa e concluir"
+                        triggerClassName="photo-input-btn"
+                      />
+                    )}
                   </div>
                 )}
               </div>

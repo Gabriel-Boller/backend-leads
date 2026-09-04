@@ -8,10 +8,12 @@ const TABS_ADMIN: [string, string][] = [
   ["/app/dashboard", "Dashboard"],
   ["/app/tarefas", "Tarefas"],
   ["/app/equipe", "Equipe"],
+  ["/app/caixa", "Caixa"],
 ];
 const TABS_COLAB: [string, string][] = [
   ["/app/minhas", "Minhas tarefas"],
   ["/app/historico", "Histórico"],
+  ["/app/caixa", "Caixa"],
 ];
 
 export default function Tabs({ papel, alertCount }: { papel: Papel; alertCount: number }) {

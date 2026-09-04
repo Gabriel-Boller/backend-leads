@@ -143,6 +143,11 @@ export default function TarefasTable({
               <tr key={t.id}>
                 <td>
                   <b>{t.titulo}</b>
+                  {t.tipoEspecial !== "NORMAL" && (
+                    <span className="tag photo" style={{ marginLeft: 6 }}>
+                      🧾 {t.tipoEspecial === "ABERTURA_CAIXA" ? "Abre caixa" : "Fecha caixa"}
+                    </span>
+                  )}
                   {t.descricao && <div className="task-desc" style={{ margin: 0 }}>{t.descricao}</div>}
                 </td>
                 {mostrarLoja && <td>{lojaNomePorId[t.lojaId] || "—"}</td>}

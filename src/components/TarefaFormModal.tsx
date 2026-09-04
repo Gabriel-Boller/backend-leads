@@ -19,6 +19,7 @@ export type TarefaEdit = {
   datasEspecificas: Date[];
   horarioInicio: string | null;
   horarioFim: string | null;
+  tipoEspecial: "NORMAL" | "ABERTURA_CAIXA" | "FECHAMENTO_CAIXA";
   atribuidoATodos: boolean;
   atribuicoes: { usuarioId: string }[];
 };
@@ -152,6 +153,19 @@ export default function TarefaFormModal({
               <input type="time" name="horarioInicio" defaultValue={tarefa?.horarioInicio || ""} />
               <input type="time" name="horarioFim" defaultValue={tarefa?.horarioFim || ""} />
             </div>
+          </div>
+
+          <div className="field">
+            <label>Tipo especial (opcional)</label>
+            <select name="tipoEspecial" defaultValue={tarefa?.tipoEspecial || "NORMAL"}>
+              <option value="NORMAL">Nenhum — tarefa normal</option>
+              <option value="ABERTURA_CAIXA">Abertura de caixa</option>
+              <option value="FECHAMENTO_CAIXA">Fechamento de caixa</option>
+            </select>
+            <small className="hint">
+              Se marcada, concluir essa tarefa abre direto o formulário de abertura/fechamento do caixa da loja (aba
+              &quot;Caixa&quot;) em vez do check simples. Use no máximo uma tarefa de cada tipo por loja.
+            </small>
           </div>
 
           <div className="field">

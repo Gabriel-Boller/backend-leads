@@ -57,6 +57,16 @@ Abra `http://localhost:3000` e entre com o e-mail/senha definidos em
    envia foto, conforme exigido.
 5. **Líder/Dono** acompanham em "Hoje" (progresso do dia), "Relatórios"
    (histórico filtrável com fotos) e "Alertas" (pendências).
+6. **Controle de caixa** (aba "Caixa"): colaborador/líder abrem o caixa da própria loja
+   (valor de abertura), lançam entradas e saídas ao longo do dia e fecham conferindo o
+   valor contado contra o esperado. Só há um caixa aberto por loja por vez, e só quem
+   abriu pode lançar ou fechar — se a pessoa não estiver disponível, dono/líder podem
+   fazer um "fechamento forçado" (fica registrado como tal). Dono e líder veem o
+   relatório de fechamentos (com a diferença e uma venda estimada, calculada a partir dos
+   lançamentos — ainda sem integração com um sistema de vendas real). Uma tarefa do
+   checklist pode ser marcada como "Abertura de caixa" ou "Fechamento de caixa"
+   (em Tarefas → tipo especial): ao invés do check simples, ela abre o formulário do
+   caixa, e preenchê-lo conclui a tarefa automaticamente.
 
 ## Scripts úteis
 

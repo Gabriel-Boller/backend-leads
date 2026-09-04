@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePapel } from "@/lib/auth";
 import { fromIsoDate } from "@/lib/dates";
-import type { FrequenciaTipo } from "@prisma/client";
+import type { FrequenciaTipo, TarefaTipoEspecial } from "@prisma/client";
 
 function garantirAcessoLoja(user: { papel: string; lojaId: string | null }, lojaId: string) {
   if (user.papel === "LIDER" && user.lojaId !== lojaId) {
@@ -26,6 +26,7 @@ export async function salvarTarefa(formData: FormData) {
   const datasEspecificas = formData.getAll("datasEspecificas").map((v) => fromIsoDate(String(v)));
   const horarioInicio = String(formData.get("horarioInicio") || "").trim() || null;
   const horarioFim = String(formData.get("horarioFim") || "").trim() || null;
+  const tipoEspecial = String(formData.get("tipoEspecial") || "NORMAL") as TarefaTipoEspecial;
   const atribuidoATodos = formData.get("atribuidoATodos") === "todos";
   const colaboradorIds = formData.getAll("colaboradorIds").map((v) => String(v));
   const requerFoto = formData.get("requerFoto") != null;
@@ -45,6 +46,7 @@ export async function salvarTarefa(formData: FormData) {
     datasEspecificas: frequenciaTipo === "PERSONALIZADA" ? datasEspecificas : [],
     horarioInicio,
     horarioFim,
+    tipoEspecial,
     atribuidoATodos,
   };
 
@@ -69,6 +71,7 @@ export async function salvarTarefa(formData: FormData) {
   revalidatePath("/app/tarefas");
   revalidatePath("/app/dashboard");
   revalidatePath("/app/minhas");
+  revalidatePath("/app/caixa");
 }
 
 /**
