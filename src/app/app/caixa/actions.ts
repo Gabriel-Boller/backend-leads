@@ -72,13 +72,14 @@ export async function lancarMovimento(caixaId: string, tipo: CaixaMovimentoTipo,
   }
 }
 
-async function calcularFechamento(caixaId: string) {
+async function calcularBaseFechamento(caixaId: string) {
   const caixa = await prisma.caixa.findUniqueOrThrow({ where: { id: caixaId }, include: { movimentos: true } });
   const entradas = caixa.movimentos.filter((m) => m.tipo === "ENTRADA").reduce((s, m) => s + decimalParaNumero(m.valor), 0);
   const saidas = caixa.movimentos.filter((m) => m.tipo === "SAIDA").reduce((s, m) => s + decimalParaNumero(m.valor), 0);
+  // Só reforço de troco (entrada) e retirada (saída) entram aqui — vendas não são
+  // lançadas como movimento, então isso é "quanto deveria ter no caixa sem contar vendas".
   const valorEsperado = decimalParaNumero(caixa.valorAbertura) + entradas - saidas;
-  const vendaEstimada = entradas - saidas;
-  return { caixa, valorEsperado, vendaEstimada };
+  return { caixa, valorEsperado };
 }
 
 export async function fecharCaixa(caixaId: string, formData: FormData): Promise<ResultadoCaixa> {
@@ -86,7 +87,7 @@ export async function fecharCaixa(caixaId: string, formData: FormData): Promise<
     const user = await requirePapel(["COLABORADOR", "LIDER"]);
     if (!user.lojaId) return { ok: false, erro: "Usuário sem loja." };
 
-    const { caixa, valorEsperado, vendaEstimada } = await calcularFechamento(caixaId);
+    const { caixa, valorEsperado } = await calcularBaseFechamento(caixaId);
     if (caixa.lojaId !== user.lojaId) return { ok: false, erro: "Caixa não encontrado." };
     if (caixa.status !== "ABERTO") return { ok: false, erro: "Esse caixa já está fechado." };
     if (caixa.abertoPorId !== user.id) return { ok: false, erro: "Somente quem abriu o caixa pode fechá-lo." };
@@ -94,6 +95,9 @@ export async function fecharCaixa(caixaId: string, formData: FormData): Promise<
     const valorContado = parseValorMonetario(formData.get("valorContado"));
     if (valorContado < 0) return { ok: false, erro: "O valor contado não pode ser negativo." };
     const obsFechamento = String(formData.get("obsFechamento") || "").trim() || null;
+    // Estimativa de venda em dinheiro implícita no que foi contado — o dono confere depois
+    // contra o que o sistema de vendas real diz (campo vendaInformada).
+    const vendaEstimada = valorContado - valorEsperado;
 
     await prisma.caixa.update({
       where: { id: caixaId },
@@ -103,7 +107,6 @@ export async function fecharCaixa(caixaId: string, formData: FormData): Promise<
         fechadoEm: new Date(),
         valorContado,
         valorEsperado,
-        diferenca: valorContado - valorEsperado,
         vendaEstimada,
         obsFechamento,
       },
@@ -130,7 +133,7 @@ export async function fecharCaixaForcado(caixaId: string, formData: FormData): P
   try {
     const user = await requirePapel(["DONO", "LIDER"]);
 
-    const { caixa, valorEsperado, vendaEstimada } = await calcularFechamento(caixaId);
+    const { caixa, valorEsperado } = await calcularBaseFechamento(caixaId);
     if (user.papel === "LIDER" && caixa.lojaId !== user.lojaId) {
       return { ok: false, erro: "Você não tem permissão para fechar o caixa dessa loja." };
     }
@@ -140,6 +143,7 @@ export async function fecharCaixaForcado(caixaId: string, formData: FormData): P
     if (valorContado < 0) return { ok: false, erro: "O valor contado não pode ser negativo." };
     const motivo = String(formData.get("obsFechamento") || "").trim();
     if (!motivo) return { ok: false, erro: "Explique o motivo do fechamento forçado." };
+    const vendaEstimada = valorContado - valorEsperado;
 
     await prisma.caixa.update({
       where: { id: caixaId },
@@ -149,7 +153,6 @@ export async function fecharCaixaForcado(caixaId: string, formData: FormData): P
         fechadoEm: new Date(),
         valorContado,
         valorEsperado,
-        diferenca: valorContado - valorEsperado,
         vendaEstimada,
         obsFechamento: motivo,
         fechamentoForcado: true,
@@ -161,5 +164,36 @@ export async function fecharCaixaForcado(caixaId: string, formData: FormData): P
   } catch (e) {
     console.error("fecharCaixaForcado falhou:", e);
     return { ok: false, erro: e instanceof Error ? e.message : "Falha ao fechar o caixa." };
+  }
+}
+
+/**
+ * Preenchido depois, à mão, pelo dono/líder — quanto o sistema de vendas real (externo,
+ * ainda sem integração) diz que foi vendido em dinheiro naquele caixa. Só faz sentido
+ * depois de fechado, pra comparar contra a venda estimada pela contagem física.
+ */
+export async function informarVendaCaixa(caixaId: string, formData: FormData): Promise<ResultadoCaixa> {
+  try {
+    const user = await requirePapel(["DONO", "LIDER"]);
+    const caixa = await prisma.caixa.findUnique({ where: { id: caixaId } });
+    if (!caixa) return { ok: false, erro: "Caixa não encontrado." };
+    if (user.papel === "LIDER" && caixa.lojaId !== user.lojaId) {
+      return { ok: false, erro: "Você não tem permissão para editar o caixa dessa loja." };
+    }
+    if (caixa.status !== "FECHADO") return { ok: false, erro: "Só dá pra informar a venda depois que o caixa for fechado." };
+
+    const vendaInformada = parseValorMonetario(formData.get("vendaInformada"));
+    if (vendaInformada < 0) return { ok: false, erro: "O valor não pode ser negativo." };
+
+    await prisma.caixa.update({
+      where: { id: caixaId },
+      data: { vendaInformada, vendaInformadaPorId: user.id, vendaInformadaEm: new Date() },
+    });
+
+    revalidarTudo();
+    return { ok: true };
+  } catch (e) {
+    console.error("informarVendaCaixa falhou:", e);
+    return { ok: false, erro: e instanceof Error ? e.message : "Falha ao registrar a venda informada." };
   }
 }

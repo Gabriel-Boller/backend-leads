@@ -78,9 +78,10 @@ model Usuario {
   instancias        TarefaInstancia[]
   sessoes           Sessao[]
 
-  caixasAbertos     Caixa[]            @relation("CaixaAbertoPor")
-  caixasFechados    Caixa[]            @relation("CaixaFechadoPor")
-  caixaMovimentos   CaixaMovimento[]
+  caixasAbertos        Caixa[]          @relation("CaixaAbertoPor")
+  caixasFechados       Caixa[]          @relation("CaixaFechadoPor")
+  caixasVendaInformada Caixa[]          @relation("CaixaVendaInformadaPor")
+  caixaMovimentos      CaixaMovimento[]
 
   @@index([lojaId])
 }
@@ -171,18 +172,27 @@ model Caixa {
   fechadoPorId  String?
   fechadoPor    Usuario?  @relation("CaixaFechadoPor", fields: [fechadoPorId], references: [id])
   fechadoEm     DateTime?
+  // O que o colaborador contou no caixa — ele nunca vê o valor esperado antes de digitar
+  // isso, de propósito, pra contar de verdade em vez de repetir um número que já viu.
   valorContado  Decimal?  @db.Decimal(10, 2)
-  // Snapshot calculado no momento do fechamento (abertura + entradas - saídas), pra não
-  // depender de recomputar os movimentos depois. A diferença é valorContado - valorEsperado.
+  // Snapshot calculado no fechamento: abertura + entradas - saídas (só reforços de troco e
+  // retiradas — vendas não são lançadas como movimento). Visível só pra dono/líder.
   valorEsperado Decimal?  @db.Decimal(10, 2)
-  diferenca     Decimal?  @db.Decimal(10, 2)
-  // Estimativa de "quanto foi vendido" (entradas - saídas) com base só nos lançamentos de
-  // caixa — enquanto não há integração com um sistema de vendas de verdade, é o número que
-  // o dono usa pra depois conferir contra as vendas reais.
+  // Estimativa de venda em dinheiro IMPLÍCITA no que foi contado: valorContado - valorEsperado.
+  // Enquanto não há integração com um sistema de vendas de verdade, é só um número derivado
+  // da contagem física — a conferência real acontece quando o dono informa vendaInformada.
   vendaEstimada Decimal?  @db.Decimal(10, 2)
   obsFechamento String?
   // true quando o dono/líder precisou fechar no lugar de quem abriu (ausência, esquecimento etc).
   fechamentoForcado Boolean @default(false)
+
+  // Preenchido depois, à mão, pelo dono/líder — quanto o sistema de vendas (externo, ainda
+  // sem integração) diz que foi vendido em dinheiro naquele caixa. Comparado com
+  // vendaEstimada pra saber se bateu.
+  vendaInformada      Decimal?  @db.Decimal(10, 2)
+  vendaInformadaPorId String?
+  vendaInformadaPor   Usuario?  @relation("CaixaVendaInformadaPor", fields: [vendaInformadaPorId], references: [id])
+  vendaInformadaEm    DateTime?
 
   movimentos CaixaMovimento[]
 

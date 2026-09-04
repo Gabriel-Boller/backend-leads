@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
 import { horarioLabel, estadoTarefaAgora, tarefaDisponivelAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
-import { caixaAbertoDaLoja, resumoCaixa } from "@/lib/caixa";
+import { caixaAbertoDaLoja } from "@/lib/caixa";
 import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL, agoraNaLoja } from "@/lib/dates";
 import { marcarFeitoSemFoto, desmarcarTarefa } from "./actions";
 import CameraCapture from "@/components/CameraCapture";
@@ -178,7 +178,6 @@ export default async function MinhasTarefasPage() {
                     ) : (
                       <FecharCaixaModal
                         caixaId={caixaAberto.id}
-                        valorEsperado={resumoCaixa(caixaAberto).valorEsperado}
                         trigger="🧾 Fechar caixa e concluir"
                         triggerClassName="photo-input-btn"
                       />

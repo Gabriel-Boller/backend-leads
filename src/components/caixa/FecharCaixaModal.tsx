@@ -13,7 +13,8 @@ export default function FecharCaixaModal({
   triggerClassName,
 }: {
   caixaId: string;
-  valorEsperado: number;
+  /** Só passe isso pra dono/líder — colaborador nunca deve ver o valor esperado antes de contar. */
+  valorEsperado?: number;
   trigger: React.ReactNode;
   triggerClassName?: string;
 }) {
@@ -40,10 +41,12 @@ export default function FecharCaixaModal({
           }}
         >
           {erro && <p className="error-text">{erro}</p>}
-          <div className="stat" style={{ marginBottom: 14 }}>
-            <div className="stat-num">{formatBRL(valorEsperado)}</div>
-            <div className="stat-label">Valor esperado em caixa (abertura + entradas − saídas)</div>
-          </div>
+          {typeof valorEsperado === "number" && (
+            <div className="stat" style={{ marginBottom: 14 }}>
+              <div className="stat-num">{formatBRL(valorEsperado)}</div>
+              <div className="stat-label">Valor esperado em caixa (abertura + entradas − saídas)</div>
+            </div>
+          )}
           <div className="field">
             <label>Quanto você contou no caixa?</label>
             <input type="number" name="valorContado" step="0.01" min="0" inputMode="decimal" placeholder="0,00" required autoFocus />

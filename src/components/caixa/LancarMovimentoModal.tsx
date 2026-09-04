@@ -41,6 +41,11 @@ export default function LancarMovimentoModal({
           }}
         >
           {erro && <p className="error-text">{erro}</p>}
+          {tipo === "ENTRADA" && (
+            <p className="task-desc">
+              Use só pra dinheiro extra colocado no caixa (reforço de troco, por exemplo) — vendas não são lançadas aqui.
+            </p>
+          )}
           <div className="field">
             <label>Valor da {label}</label>
             <input type="number" name="valor" step="0.01" min="0.01" inputMode="decimal" placeholder="0,00" required autoFocus />

@@ -9,6 +9,7 @@ import AbrirCaixaModal from "@/components/caixa/AbrirCaixaModal";
 import LancarMovimentoModal from "@/components/caixa/LancarMovimentoModal";
 import FecharCaixaModal from "@/components/caixa/FecharCaixaModal";
 import ForcarFechamentoModal from "@/components/caixa/ForcarFechamentoModal";
+import InformarVendaModal from "@/components/caixa/InformarVendaModal";
 
 const PERIODOS_VALIDOS: Periodo[] = ["hoje", "7dias", "30dias", "mes", "mes_passado", "personalizado"];
 
@@ -33,6 +34,9 @@ async function SeuCaixaSection({ user, lojaId }: { user: UsuarioSessao; lojaId: 
 
   const { entradas, saidas, valorAbertura, valorEsperado } = resumoCaixa(caixa);
   const souEuQueAbri = caixa.abertoPorId === user.id;
+  // Colaborador nunca vê o valor esperado — só dono/líder, e só depois de fechado o
+  // colaborador conta de verdade sem ter visto nenhum número de referência antes.
+  const podeVerEsperado = user.papel !== "COLABORADOR";
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
@@ -68,17 +72,24 @@ async function SeuCaixaSection({ user, lojaId }: { user: UsuarioSessao; lojaId: 
           <div className="stat-num">{formatBRL(saidas)}</div>
           <div className="stat-label">Saídas</div>
         </div>
-        <div className="stat">
-          <div className="stat-num">{formatBRL(valorEsperado)}</div>
-          <div className="stat-label">Esperado agora</div>
-        </div>
+        {podeVerEsperado && (
+          <div className="stat">
+            <div className="stat-num">{formatBRL(valorEsperado)}</div>
+            <div className="stat-label">Esperado agora</div>
+          </div>
+        )}
       </div>
 
       {souEuQueAbri ? (
         <div className="row" style={{ marginBottom: caixa.movimentos.length ? 14 : 0 }}>
           <LancarMovimentoModal caixaId={caixa.id} tipo="ENTRADA" trigger="+ Entrada" triggerClassName="btn btn-soft" />
           <LancarMovimentoModal caixaId={caixa.id} tipo="SAIDA" trigger="− Saída" triggerClassName="btn btn-outline" />
-          <FecharCaixaModal caixaId={caixa.id} valorEsperado={valorEsperado} trigger="Fechar caixa" triggerClassName="btn btn-primary" />
+          <FecharCaixaModal
+            caixaId={caixa.id}
+            valorEsperado={podeVerEsperado ? valorEsperado : undefined}
+            trigger="Fechar caixa"
+            triggerClassName="btn btn-primary"
+          />
         </div>
       ) : (
         <p className="task-desc">Somente {caixa.abertoPor.nome} pode lançar valores ou fechar esse caixa.</p>
@@ -187,15 +198,16 @@ async function RelatorioSection({
   });
   const nomeLoja = new Map(lojas.map((l) => [l.id, l.nome]));
 
-  const totalVenda = caixas.reduce((s, c) => s + decimalParaNumero(c.vendaEstimada), 0);
-  const totalDiferenca = caixas.reduce((s, c) => s + decimalParaNumero(c.diferenca), 0);
+  const totalVendaEstimada = caixas.reduce((s, c) => s + decimalParaNumero(c.vendaEstimada), 0);
+  const conferidos = caixas.filter((c) => c.vendaInformada != null);
+  const totalDiferenca = conferidos.reduce((s, c) => s + (decimalParaNumero(c.vendaInformada) - decimalParaNumero(c.vendaEstimada)), 0);
 
   return (
     <>
       <h2 style={{ fontSize: 16.5 }}>Relatório de caixa</h2>
       <p className="task-desc" style={{ marginTop: -6 }}>
-        Fechamentos no período. A venda estimada é calculada a partir dos lançamentos de caixa (entradas − saídas) — ainda sem
-        integração com um sistema de vendas real, serve pra conferência.
+        Fechamentos no período. &quot;Venda estimada&quot; é o que a contagem física do caixa implica (contado − esperado sem
+        vendas). Informe a &quot;venda em dinheiro&quot; de cada caixa (consultando o sistema de vendas) pra ver se bateu.
       </p>
 
       <form className="card" style={{ marginBottom: 16 }}>
@@ -222,12 +234,12 @@ async function RelatorioSection({
 
       <div className="grid grid-2" style={{ marginBottom: 16 }}>
         <div className="stat">
-          <div className="stat-num">{formatBRL(totalVenda)}</div>
-          <div className="stat-label">Venda estimada no período</div>
+          <div className="stat-num">{formatBRL(totalVendaEstimada)}</div>
+          <div className="stat-label">Venda estimada no período (pela contagem)</div>
         </div>
         <div className="stat">
           <div className="stat-num">{formatBRL(totalDiferenca)}</div>
-          <div className="stat-label">Diferença acumulada (sobra/falta)</div>
+          <div className="stat-label">Diferença acumulada nos caixas já conferidos ({conferidos.length}/{caixas.length})</div>
         </div>
       </div>
 
@@ -241,17 +253,20 @@ async function RelatorioSection({
                 {mostrarLoja && <th>Loja</th>}
                 <th>Aberto por</th>
                 <th>Fechado por</th>
-                <th>Abertura</th>
                 <th>Contado</th>
-                <th>Esperado</th>
-                <th>Diferença</th>
+                <th>Esperado (sem vendas)</th>
                 <th>Venda estimada</th>
+                <th>Venda em dinheiro (sistema)</th>
+                <th>Diferença</th>
                 <th>Fechado em</th>
               </tr>
             </thead>
             <tbody>
               {caixas.map((c) => {
-                const diferenca = decimalParaNumero(c.diferenca);
+                const vendaEstimada = decimalParaNumero(c.vendaEstimada);
+                const vendaInformada = c.vendaInformada != null ? decimalParaNumero(c.vendaInformada) : null;
+                const diferenca = vendaInformada != null ? vendaInformada - vendaEstimada : null;
+                const divergente = diferenca != null && Math.abs(diferenca) >= 0.01;
                 return (
                   <tr key={c.id}>
                     {mostrarLoja && <td>{nomeLoja.get(c.lojaId) || "—"}</td>}
@@ -264,13 +279,40 @@ async function RelatorioSection({
                         </span>
                       )}
                     </td>
-                    <td>{formatBRL(decimalParaNumero(c.valorAbertura))}</td>
                     <td>{formatBRL(decimalParaNumero(c.valorContado))}</td>
                     <td>{formatBRL(decimalParaNumero(c.valorEsperado))}</td>
-                    <td style={{ color: diferenca === 0 ? undefined : diferenca > 0 ? "var(--success)" : "var(--danger)" }}>
-                      {formatBRL(diferenca)}
+                    <td>{formatBRL(vendaEstimada)}</td>
+                    <td>
+                      {vendaInformada != null ? (
+                        <>
+                          {formatBRL(vendaInformada)}{" "}
+                          <InformarVendaModal
+                            caixaId={c.id}
+                            vendaInformada={vendaInformada}
+                            trigger="Editar"
+                            triggerClassName="btn btn-outline btn-sm"
+                          />
+                        </>
+                      ) : (
+                        <InformarVendaModal caixaId={c.id} trigger="Informar" triggerClassName="btn btn-soft btn-sm" />
+                      )}
                     </td>
-                    <td>{formatBRL(decimalParaNumero(c.vendaEstimada))}</td>
+                    <td>
+                      {diferenca != null ? (
+                        <>
+                          <span style={{ color: !divergente ? undefined : diferenca > 0 ? "var(--success)" : "var(--danger)" }}>
+                            {formatBRL(diferenca)}
+                          </span>
+                          {divergente && (
+                            <span className="tag late" style={{ marginLeft: 6 }}>
+                              ⚠️ Divergência
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>{c.fechadoEm ? `${fmtDatePretty(isoDate(c.fechadoEm))} ${fmtTime(c.fechadoEm)}` : "—"}</td>
                   </tr>
                 );
