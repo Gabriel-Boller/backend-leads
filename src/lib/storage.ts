@@ -3,9 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 
 const BUCKET = "fotos-tarefas";
 
+/**
+ * Remove qualquer caractere fora do ASCII imprimível (ex: "•" que gerenciadores de senha
+ * às vezes inserem sozinhos ao "ajudar" a preencher um campo de senha/secreto) — chaves
+ * de API e URLs legítimas nunca usam esses caracteres, então isso só limpa lixo.
+ */
+function limparVariavelDeAmbiente(valor: string): string {
+  return valor.replace(/[^\x21-\x7E]/g, "");
+}
+
 function client() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.SUPABASE_URL && limparVariavelDeAmbiente(process.env.SUPABASE_URL);
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY && limparVariavelDeAmbiente(process.env.SUPABASE_SERVICE_ROLE_KEY);
   if (!url || !key) {
     throw new Error(
       "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY não configurados. Veja o .env.example."

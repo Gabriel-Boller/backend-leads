@@ -87,7 +87,7 @@ export function estadoTarefaAgora(tarefa: TarefaHorario, agora: Date): EstadoTar
 export function escalaLabel(u: UsuarioEscala): string {
   if (u.escalaTipo === "DIAS_SEMANA") return u.diasSemana.map((d) => DIAS[d]).join(", ") || "Nenhum dia definido";
   if (u.escalaTipo === "DOZE_POR_TRINTA_SEIS") {
-    return "12x36" + (u.escalaDataBase ? ` (desde ${u.escalaDataBase.toLocaleDateString("pt-BR")})` : "");
+    return "12x36" + (u.escalaDataBase ? ` (desde ${u.escalaDataBase.toLocaleDateString("pt-BR", { timeZone: "UTC" })})` : "");
   }
   return "Todos os dias";
 }

@@ -1,5 +1,31 @@
 export const DIAS_SEMANA_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+/** Fuso horário de referência do app — as lojas são todas no Brasil. */
+export const FUSO_HORARIO = "America/Sao_Paulo";
+
+/**
+ * "Agora" no fuso horário do Brasil, como um Date cujos getters locais (getFullYear,
+ * getMonth, getDate, getHours...) já refletem o horário de Brasília — necessário porque
+ * o servidor (Vercel) roda em UTC, e sem isso "hoje"/"agora" ficariam até 3h adiantados
+ * (por exemplo, virando o dia às 21h de Brasília em vez da meia-noite de verdade).
+ */
+export function agoraNaLoja(): Date {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: FUSO_HORARIO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value);
+  // hour12:false faz meia-noite virar "24" em vez de "00" — normaliza de volta pra 0.
+  const hora = get("hour") % 24;
+  return new Date(get("year"), get("month") - 1, get("day"), hora, get("minute"), get("second"));
+}
+
 /** Converte um Date para uma string ISO "YYYY-MM-DD" no fuso local (evita bug de UTC do toISOString). */
 export function isoDate(d: Date): string {
   const y = d.getFullYear();
@@ -15,11 +41,11 @@ export function fromIsoDate(iso: string): Date {
 }
 
 export function todayISO(): string {
-  return isoDate(new Date());
+  return isoDate(agoraNaLoja());
 }
 
 export function daysAgo(n: number): Date {
-  const d = new Date();
+  const d = agoraNaLoja();
   d.setDate(d.getDate() - n);
   return d;
 }
@@ -30,7 +56,7 @@ export function fmtDatePretty(iso: string): string {
 }
 
 export function fmtTime(date: Date): string {
-  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: FUSO_HORARIO });
 }
 
 /** Diferença em dias de calendário entre duas datas "puras" (sem hora). */
@@ -44,7 +70,7 @@ export type Periodo = "hoje" | "7dias" | "30dias" | "mes" | "mes_passado" | "per
 
 /** Converte um período nomeado (ou datas personalizadas) num intervalo [de, ate] em ISO. */
 export function periodoParaRange(periodo: Periodo, deCustom?: string, ateCustom?: string): { de: string; ate: string } {
-  const hoje = new Date();
+  const hoje = agoraNaLoja();
   if (periodo === "hoje") {
     const iso = todayISO();
     return { de: iso, ate: iso };

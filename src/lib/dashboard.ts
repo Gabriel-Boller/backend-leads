@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { isoDate, fromIsoDate, diffDays } from "@/lib/dates";
+import { isoDate, fromIsoDate, diffDays, agoraNaLoja } from "@/lib/dates";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
 import { estadoTarefaAgora } from "@/lib/schedule";
 
@@ -56,7 +56,7 @@ export async function gerarDadosDashboard(params: { lojaIds: string[]; de: strin
   });
   const feitos = new Set(instancias.map((i) => `${i.tarefaId}__${i.usuarioId}__${isoDate(i.data)}`));
 
-  const agora = new Date();
+  const agora = agoraNaLoja();
   const inicio = fromIsoDate(de);
   const fim = fromIsoDate(ate) < agora ? fromIsoDate(ate) : agora;
   const totalDias = Math.max(0, diffDays(fim, inicio));

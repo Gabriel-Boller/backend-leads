@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario, type TarefaComAtribuicoes } from "@/lib/tarefas";
 import { estadoTarefaAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
-import { todayISO, fromIsoDate, fmtDatePretty } from "@/lib/dates";
+import { todayISO, fromIsoDate, fmtDatePretty, agoraNaLoja } from "@/lib/dates";
 
 export default async function HojeBlock({ lojaIds, mostrarLoja }: { lojaIds: string[]; mostrarLoja: boolean }) {
   const colaboradores = await prisma.usuario.findMany({
@@ -16,7 +16,7 @@ export default async function HojeBlock({ lojaIds, mostrarLoja }: { lojaIds: str
     tarefasPorLoja.set(lojaId, await carregarTarefasAtivasDaLoja(lojaId));
   }
 
-  const hoje = new Date();
+  const hoje = agoraNaLoja();
   const iso = todayISO();
 
   const instancias = await prisma.tarefaInstancia.findMany({

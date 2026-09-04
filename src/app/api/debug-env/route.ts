@@ -5,10 +5,18 @@ import { requirePapel } from "@/lib/auth";
 // que posição). Remover depois de encontrar o problema.
 function scan(name: string, val: string | undefined) {
   if (val == null) return { name, presente: false };
+  const limpo = val.replace(/[^\x21-\x7E]/g, "");
   for (let i = 0; i < val.length; i++) {
     const code = val.charCodeAt(i);
     if (code > 255) {
-      return { name, presente: true, tamanho: val.length, indiceRuim: i, codigoRuim: code };
+      return {
+        name,
+        presente: true,
+        tamanho: val.length,
+        indiceRuim: i,
+        codigoRuim: code,
+        tamanhoDepoisDeLimpar: limpo.length,
+      };
     }
   }
   return { name, presente: true, tamanho: val.length, ok: true };

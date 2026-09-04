@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { salvarUsuario } from "@/app/app/equipe/actions";
+import { isoDate } from "@/lib/dates";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -94,8 +95,8 @@ export default function UsuarioFormModal({
                     name="escalaDataBase"
                     defaultValue={
                       usuario?.escalaDataBase
-                        ? new Date(usuario.escalaDataBase).toISOString().slice(0, 10)
-                        : new Date().toISOString().slice(0, 10)
+                        ? isoDate(new Date(usuario.escalaDataBase))
+                        : isoDate(new Date())
                     }
                   />
                   <small className="hint">O sistema calcula os demais dias automaticamente (1 dia trabalha, 1 dia folga).</small>

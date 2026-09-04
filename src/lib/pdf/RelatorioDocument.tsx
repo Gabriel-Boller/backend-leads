@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { fmtDatePretty } from "@/lib/dates";
+import { fmtDatePretty, FUSO_HORARIO } from "@/lib/dates";
 import type { DadosRelatorio } from "@/lib/relatorio";
 
 const styles = StyleSheet.create({
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
 export function RelatorioDocument({ dados }: { dados: DadosRelatorio }) {
   const total = dados.feitos.length + dados.pendentes.length;
   const pct = total ? Math.round((100 * dados.feitos.length) / total) : 0;
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: FUSO_HORARIO });
 
   return (
     <Document>

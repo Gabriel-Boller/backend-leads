@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
 import { horarioLabel, estadoTarefaAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
-import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL } from "@/lib/dates";
+import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL, agoraNaLoja } from "@/lib/dates";
 import { marcarFeitoSemFoto, desmarcarTarefa } from "./actions";
 import CameraCapture from "@/components/CameraCapture";
 import Celebracao from "@/components/Celebracao";
@@ -15,7 +15,7 @@ export default async function MinhasTarefasPage() {
     return <p className="task-desc">Você ainda não está vinculado a uma loja.</p>;
   }
 
-  const hoje = new Date();
+  const hoje = agoraNaLoja();
   const tarefasDaLoja = await carregarTarefasAtivasDaLoja(usuario.lojaId);
   const esperadas = tarefasEsperadasParaUsuario(usuario, hoje, tarefasDaLoja);
 

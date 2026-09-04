@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePapel, hashSenha } from "@/lib/auth";
+import { fromIsoDate } from "@/lib/dates";
 import type { EscalaTipo } from "@prisma/client";
 
 export async function criarLoja(formData: FormData) {
@@ -65,7 +66,7 @@ export async function salvarUsuario(formData: FormData) {
           escalaTipo,
           diasSemana: escalaTipo === "DIAS_SEMANA" ? diasSemana : [],
           escalaDataBase:
-            escalaTipo === "DOZE_POR_TRINTA_SEIS" && escalaDataBaseRaw ? new Date(escalaDataBaseRaw) : null,
+            escalaTipo === "DOZE_POR_TRINTA_SEIS" && escalaDataBaseRaw ? fromIsoDate(escalaDataBaseRaw) : null,
         }
       : { escalaTipo: "TODOS" as EscalaTipo, diasSemana: [], escalaDataBase: null };
 
