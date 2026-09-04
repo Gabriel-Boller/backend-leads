@@ -88,11 +88,12 @@ model Tarefa {
 }
 
 model TarefaAtribuicao {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   tarefaId  String
-  tarefa    Tarefa  @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  tarefa    Tarefa   @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
   usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@unique([tarefaId, usuarioId])
 }
