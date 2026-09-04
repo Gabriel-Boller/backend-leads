@@ -66,18 +66,22 @@ export async function salvarTarefa(formData: FormData) {
   }
 
   revalidatePath("/app/tarefas");
-  revalidatePath("/app/hoje");
+  revalidatePath("/app/dashboard");
   revalidatePath("/app/minhas");
 }
 
-export async function excluirTarefa(tarefaId: string) {
+/**
+ * Pausa/reativa a tarefa (nunca apaga de vez): apagar destruiria o histórico de
+ * conclusões já registradas nos relatórios, então isso é reversível de propósito.
+ */
+export async function pausarOuAtivarTarefa(tarefaId: string) {
   const user = await requirePapel(["DONO", "LIDER"]);
   const tarefa = await prisma.tarefa.findUnique({ where: { id: tarefaId } });
   if (!tarefa) return;
   garantirAcessoLoja(user, tarefa.lojaId);
 
-  await prisma.tarefa.update({ where: { id: tarefaId }, data: { ativo: false } });
+  await prisma.tarefa.update({ where: { id: tarefaId }, data: { ativo: !tarefa.ativo } });
 
   revalidatePath("/app/tarefas");
-  revalidatePath("/app/hoje");
+  revalidatePath("/app/dashboard");
 }

@@ -6,11 +6,8 @@ import type { Papel } from "@prisma/client";
 
 const TABS_ADMIN: [string, string][] = [
   ["/app/dashboard", "Dashboard"],
-  ["/app/hoje", "Hoje"],
   ["/app/tarefas", "Tarefas"],
   ["/app/equipe", "Equipe"],
-  ["/app/relatorios", "Relatórios"],
-  ["/app/alertas", "Alertas"],
 ];
 const TABS_COLAB: [string, string][] = [
   ["/app/minhas", "Minhas tarefas"],
@@ -31,7 +28,7 @@ export default function Tabs({ papel, alertCount }: { papel: Papel; alertCount: 
       {tabs.map(([href, label]) => (
         <Link key={href} href={href} className={`tab ${pathname === href ? "active" : ""}`}>
           {label}
-          {href === "/app/alertas" && alertCount > 0 && (
+          {href === "/app/dashboard" && alertCount > 0 && (
             <span className="badge-count">{alertCount}</span>
           )}
         </Link>

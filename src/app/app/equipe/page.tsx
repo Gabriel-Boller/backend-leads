@@ -1,13 +1,26 @@
 import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { escalaLabel } from "@/lib/schedule";
+import { lojaIdsVisiveis } from "@/lib/escopo";
+import { gerarDadosDashboard } from "@/lib/dashboard";
+import { isoDate, daysAgo, todayISO } from "@/lib/dates";
 import LojaFormModal from "@/components/LojaFormModal";
 import UsuarioFormModal from "@/components/UsuarioFormModal";
 import ConfirmForm from "@/components/ConfirmForm";
 import { removerUsuario } from "./actions";
 
+function DesempenhoTag({ pct }: { pct: number | undefined }) {
+  if (pct == null) return <span className="tag">Sem dados (7 dias)</span>;
+  const tom = pct >= 80 ? "ok" : pct < 40 ? "late" : "";
+  return <span className={`tag ${tom}`}>{pct}% concluído (7 dias)</span>;
+}
+
 export default async function EquipePage() {
   const user = await requirePapel(["DONO", "LIDER"]);
+
+  const lojaIds = await lojaIdsVisiveis(user);
+  const dadosDesempenho = await gerarDadosDashboard({ lojaIds, de: isoDate(daysAgo(6)), ate: todayISO() });
+  const pctPorColaborador = new Map(dadosDesempenho.rankingColaboradores.map((r) => [r.id, r.pct]));
 
   if (user.papel === "DONO") {
     const lojas = await prisma.loja.findMany({
@@ -74,7 +87,7 @@ export default async function EquipePage() {
               {colabs.map((c) => (
                 <div key={c.id} className="list-user">
                   <span>
-                    {c.nome} <span className="tag">{escalaLabel(c)}</span>
+                    {c.nome} <span className="tag">{escalaLabel(c)}</span> <DesempenhoTag pct={pctPorColaborador.get(c.id)} />
                   </span>
                   <div style={{ display: "flex", gap: 6 }}>
                     <UsuarioFormModal
@@ -140,7 +153,7 @@ export default async function EquipePage() {
               </ConfirmForm>
             </div>
           </div>
-          <span className="tag">Escala: {escalaLabel(c)}</span>
+          <span className="tag">Escala: {escalaLabel(c)}</span> <DesempenhoTag pct={pctPorColaborador.get(c.id)} />
         </div>
       ))}
     </>

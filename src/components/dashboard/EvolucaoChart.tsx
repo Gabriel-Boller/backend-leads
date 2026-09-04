@@ -52,12 +52,20 @@ export default function EvolucaoChart({ pontos }: { pontos: PontoEvolucao[] }) {
           {ultimo.pct}%
         </text>
 
-        <text x={x(0)} y={H - 8} textAnchor="start" fontSize={10} fill="var(--ink-soft)">
-          {fmtDatePretty(pontos[0].data)}
-        </text>
-        <text x={x(n - 1)} y={H - 8} textAnchor="end" fontSize={10} fill="var(--ink-soft)">
-          {fmtDatePretty(pontos[n - 1].data)}
-        </text>
+        {n > 1 ? (
+          <>
+            <text x={x(0)} y={H - 8} textAnchor="start" fontSize={10} fill="var(--ink-soft)">
+              {fmtDatePretty(pontos[0].data)}
+            </text>
+            <text x={x(n - 1)} y={H - 8} textAnchor="end" fontSize={10} fill="var(--ink-soft)">
+              {fmtDatePretty(pontos[n - 1].data)}
+            </text>
+          </>
+        ) : (
+          <text x={x(0)} y={H - 8} textAnchor="middle" fontSize={10} fill="var(--ink-soft)">
+            {fmtDatePretty(pontos[0].data)}
+          </text>
+        )}
       </svg>
     </div>
   );

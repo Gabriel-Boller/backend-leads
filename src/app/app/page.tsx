@@ -3,5 +3,5 @@ import { requireUsuario } from "@/lib/auth";
 
 export default async function AppIndexPage() {
   const user = await requireUsuario();
-  redirect(user.papel === "COLABORADOR" ? "/app/minhas" : "/app/hoje");
+  redirect(user.papel === "COLABORADOR" ? "/app/minhas" : "/app/dashboard");
 }

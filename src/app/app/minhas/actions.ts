@@ -28,7 +28,7 @@ export async function marcarFeitoSemFoto(tarefaId: string) {
   });
 
   revalidatePath("/app/minhas");
-  revalidatePath("/app/hoje");
+  revalidatePath("/app/dashboard");
 }
 
 export async function desmarcarTarefa(tarefaId: string) {
@@ -42,7 +42,7 @@ export async function desmarcarTarefa(tarefaId: string) {
     .catch(() => {});
 
   revalidatePath("/app/minhas");
-  revalidatePath("/app/hoje");
+  revalidatePath("/app/dashboard");
 }
 
 export type ResultadoFoto = { ok: true } | { ok: false; erro: string };
@@ -73,7 +73,7 @@ export async function concluirComFoto(tarefaId: string, formData: FormData): Pro
     });
 
     revalidatePath("/app/minhas");
-    revalidatePath("/app/hoje");
+    revalidatePath("/app/dashboard");
     return { ok: true };
   } catch (e) {
     console.error("concluirComFoto falhou:", e);
