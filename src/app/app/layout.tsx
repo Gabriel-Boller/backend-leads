@@ -3,13 +3,8 @@ import { lojaIdsVisiveis } from "@/lib/escopo";
 import { calcAlertas } from "@/lib/alertas";
 import { isoDate, daysAgo, todayISO } from "@/lib/dates";
 import Tabs from "@/components/Tabs";
+import UserMenu from "@/components/UserMenu";
 import { sair } from "./actions";
-
-const ROLE_LABEL: Record<string, string> = {
-  DONO: "Dono",
-  LIDER: "Líder",
-  COLABORADOR: "Colaborador",
-};
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUsuario();
@@ -26,17 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="brand">
           <div className="brand-mark">✓</div>Checklist das Lojas
         </div>
-        <div className="who">
-          <span className="pill">{ROLE_LABEL[user.papel]}</span>
-          <span>
-            <b>{user.nome}</b>
-          </span>
-          <form action={sair}>
-            <button className="logout-btn" type="submit">
-              Sair
-            </button>
-          </form>
-        </div>
+        <UserMenu nome={user.nome} email={user.email} contato={user.contato} papel={user.papel} sair={sair} />
       </div>
       <Tabs papel={user.papel} alertCount={alertCount} />
       <div className="content">{children}</div>

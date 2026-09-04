@@ -59,6 +59,8 @@ export async function encerrarSessao(): Promise<void> {
 export type UsuarioSessao = {
   id: string;
   nome: string;
+  email: string;
+  contato: string | null;
   papel: Papel;
   lojaId: string | null;
 };
@@ -80,6 +82,8 @@ export async function getUsuarioAtual(): Promise<UsuarioSessao | null> {
   return {
     id: sessao.usuario.id,
     nome: sessao.usuario.nome,
+    email: sessao.usuario.email,
+    contato: sessao.usuario.contato,
     papel: sessao.usuario.papel,
     lojaId: sessao.usuario.lojaId,
   };
