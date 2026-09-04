@@ -68,7 +68,9 @@ model Tarefa {
 
   titulo          String
   descricao       String?
+  categoria       String?        // texto livre: "Abertura", "Fechamento", "Rotina", "Caixa", etc.
   requerFoto      Boolean        @default(false)
+  link            String?        // se preenchido, a tarefa não pede foto: colaborador abre o link e depois marca como feita
   ativo           Boolean        @default(true)
   createdAt       DateTime       @default(now())
 

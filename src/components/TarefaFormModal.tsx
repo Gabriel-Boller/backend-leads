@@ -12,7 +12,9 @@ export type TarefaEdit = {
   lojaId: string;
   titulo: string;
   descricao: string | null;
+  categoria: string | null;
   requerFoto: boolean;
+  link: string | null;
   frequenciaTipo: "DIARIA" | "SEMANAL" | "MENSAL" | "PERSONALIZADA";
   diasSemana: number[];
   diaDoMes: number | null;
@@ -22,6 +24,10 @@ export type TarefaEdit = {
   atribuidoATodos: boolean;
   atribuicoes: { usuarioId: string }[];
 };
+
+const CATEGORIAS_SUGERIDAS = ["Abertura", "Fechamento", "Rotina", "Caixa", "Estoque", "Limpeza", "Atendimento"];
+
+type ModoConclusao = "SIMPLES" | "FOTO" | "LINK";
 
 export default function TarefaFormModal({
   trigger,
@@ -44,11 +50,26 @@ export default function TarefaFormModal({
   const [atribuidoATodos, setAtribuidoATodos] = useState(tarefa ? tarefa.atribuidoATodos : true);
   const [datas, setDatas] = useState<string[]>(tarefa?.datasEspecificas.map((d) => isoDate(new Date(d))) || []);
   const [novaData, setNovaData] = useState("");
+  const [modoConclusao, setModoConclusao] = useState<ModoConclusao>(
+    tarefa?.link ? "LINK" : tarefa?.requerFoto ? "FOTO" : "SIMPLES"
+  );
   const colaboradores = colaboradoresPorLoja[lojaId] || [];
   const atribuicaoIds = new Set(tarefa?.atribuicoes.map((a) => a.usuarioId));
 
+  // o modal não desmonta esse componente ao fechar (só some da tela), então sem isso
+  // os campos "controlados" (freq, modoConclusao, etc.) ficam com o valor da última
+  // vez que o modal foi aberto em vez de voltar ao estado real da tarefa.
+  const resetEstado = () => {
+    setLojaId(tarefa?.lojaId || defaultLojaId);
+    setFreq(tarefa?.frequenciaTipo || "DIARIA");
+    setAtribuidoATodos(tarefa ? tarefa.atribuidoATodos : true);
+    setDatas(tarefa?.datasEspecificas.map((d) => isoDate(new Date(d))) || []);
+    setNovaData("");
+    setModoConclusao(tarefa?.link ? "LINK" : tarefa?.requerFoto ? "FOTO" : "SIMPLES");
+  };
+
   return (
-    <Modal trigger={trigger} triggerClassName={triggerClassName} title={isEdit ? "Editar tarefa" : "Nova tarefa"}>
+    <Modal trigger={trigger} triggerClassName={triggerClassName} title={isEdit ? "Editar tarefa" : "Nova tarefa"} onClose={resetEstado}>
       {(close) => (
         <form action={salvarTarefa} onSubmit={close}>
           {isEdit && <input type="hidden" name="id" value={tarefa!.id} />}
@@ -59,6 +80,15 @@ export default function TarefaFormModal({
           <div className="field">
             <label>Descrição (opcional)</label>
             <textarea name="descricao" rows={2} defaultValue={tarefa?.descricao || ""} placeholder="Detalhes de como fazer" />
+          </div>
+          <div className="field">
+            <label>Categoria (opcional)</label>
+            <input type="text" name="categoria" list="categorias-sugeridas" defaultValue={tarefa?.categoria || ""} placeholder="Ex: Abertura, Caixa, Rotina..." />
+            <datalist id="categorias-sugeridas">
+              {CATEGORIAS_SUGERIDAS.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
           {lojas.length > 1 && (
             <div className="field">
@@ -180,10 +210,28 @@ export default function TarefaFormModal({
             </div>
           )}
 
-          <div className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <input type="checkbox" name="requerFoto" style={{ width: "auto" }} defaultChecked={tarefa?.requerFoto} />
-            <label style={{ margin: 0 }}>Exigir foto para concluir</label>
+          <div className="field">
+            <label>Como o colaborador confirma a conclusão?</label>
+            <select name="modoConclusao" value={modoConclusao} onChange={(e) => setModoConclusao(e.target.value as ModoConclusao)}>
+              <option value="SIMPLES">Marcar como feito (sem evidência)</option>
+              <option value="FOTO">Exigir foto</option>
+              <option value="LINK">Abrir link externo (ex: lançar perda, abrir caixa)</option>
+            </select>
           </div>
+
+          {modoConclusao === "LINK" && (
+            <div className="field">
+              <label>Link</label>
+              <input
+                type="url"
+                name="link"
+                defaultValue={tarefa?.link || ""}
+                placeholder="https://..."
+                required
+              />
+              <small className="hint">O colaborador vai clicar num botão que abre esse link e, depois, marca a tarefa como feita.</small>
+            </div>
+          )}
 
           <button className="btn btn-primary btn-block" type="submit">
             {isEdit ? "Salvar alterações" : "Criar tarefa"}

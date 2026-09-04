@@ -9,7 +9,9 @@ export type TarefaComAtribuicoes = {
   lojaId: string;
   titulo: string;
   descricao: string | null;
+  categoria: string | null;
   requerFoto: boolean;
+  link: string | null;
   ativo: boolean;
   createdAt: Date;
   frequenciaTipo: FrequenciaTipo;

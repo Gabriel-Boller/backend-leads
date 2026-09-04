@@ -118,6 +118,7 @@ export default async function MinhasTarefasPage() {
                 <div className="task-meta">
                   {horarioLabel(t) && <span className="tag">🕐 {horarioLabel(t)}</span>}
                   {t.requerFoto && <span className="tag photo">📷 Precisa de foto</span>}
+                  {t.link && <span className="tag photo">🔗 Abrir link</span>}
                   {done && <span className="tag ok">Concluída {inst && `às ${fmtTime(inst.concluidoEm)}`}</span>}
                   {!done && estado === "atrasada" && <span className="tag late">⏰ Atrasada</span>}
                   {!done && estado === "na_hora" && <span className="tag" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>🕐 Na hora</span>}
@@ -134,6 +135,13 @@ export default async function MinhasTarefasPage() {
                 {!done && disponivel && t.requerFoto && (
                   <div style={{ marginTop: 10 }}>
                     <CameraCapture tarefaId={t.id} />
+                  </div>
+                )}
+                {!done && disponivel && t.link && (
+                  <div style={{ marginTop: 10 }}>
+                    <a href={t.link} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                      🔗 Abrir link
+                    </a>
                   </div>
                 )}
               </div>

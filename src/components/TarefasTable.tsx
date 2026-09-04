@@ -63,7 +63,10 @@ export default function TarefasTable({
     return tarefas.filter(
       (t) =>
         (lojaFiltro === "todas" || t.lojaId === lojaFiltro) &&
-        (!q || t.titulo.toLowerCase().includes(q) || (t.descricao || "").toLowerCase().includes(q))
+        (!q ||
+          t.titulo.toLowerCase().includes(q) ||
+          (t.descricao || "").toLowerCase().includes(q) ||
+          (t.categoria || "").toLowerCase().includes(q))
     );
   }, [tarefas, busca, lojaFiltro]);
 
@@ -72,6 +75,7 @@ export default function TarefasTable({
     .map((f) => ({ label: FREQ_LABEL[f], valor: tarefas.filter((t) => t.frequenciaTipo === f).length }))
     .filter((l) => l.valor > 0);
   const comFoto = tarefas.filter((t) => t.requerFoto).length;
+  const comLink = tarefas.filter((t) => t.link).length;
   const especificas = tarefas.filter((t) => !t.atribuidoATodos).length;
 
   return (
@@ -93,10 +97,11 @@ export default function TarefasTable({
           ]}
         />
         <MiniStatCard
-          titulo="Foto"
+          titulo="Confirmação"
           linhas={[
             { label: "Exige foto", valor: comFoto, max: tarefas.length },
-            { label: "Não exige", valor: tarefas.length - comFoto, max: tarefas.length },
+            { label: "Abre link", valor: comLink, max: tarefas.length },
+            { label: "Simples", valor: tarefas.length - comFoto - comLink, max: tarefas.length },
           ]}
         />
       </div>
@@ -133,7 +138,7 @@ export default function TarefasTable({
               <th>Recorrência</th>
               <th>Atribuição</th>
               <th>Horário</th>
-              <th>Foto</th>
+              <th>Confirmação</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -143,13 +148,18 @@ export default function TarefasTable({
               <tr key={t.id}>
                 <td>
                   <b>{t.titulo}</b>
+                  {t.categoria && (
+                    <span className="tag" style={{ marginLeft: 8 }}>
+                      {t.categoria}
+                    </span>
+                  )}
                   {t.descricao && <div className="task-desc" style={{ margin: 0 }}>{t.descricao}</div>}
                 </td>
                 {mostrarLoja && <td>{lojaNomePorId[t.lojaId] || "—"}</td>}
                 <td>{FREQ_LABEL[t.frequenciaTipo]}</td>
                 <td>{t.atribuidoATodos ? "Todos" : `${t.atribuicoes.length} colaborador(es)`}</td>
                 <td>{t.horarioInicio || t.horarioFim ? `${t.horarioInicio || "—"} às ${t.horarioFim || "—"}` : "—"}</td>
-                <td>{t.requerFoto ? "📷 Sim" : "—"}</td>
+                <td>{t.link ? "🔗 Link" : t.requerFoto ? "📷 Foto" : "—"}</td>
                 <td>
                   <form action={pausarOuAtivarTarefa.bind(null, t.id)}>
                     <button

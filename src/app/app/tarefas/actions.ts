@@ -19,6 +19,9 @@ export async function salvarTarefa(formData: FormData) {
   const lojaId = String(formData.get("lojaId") || (user.lojaId ?? ""));
   const titulo = String(formData.get("titulo") || "").trim();
   const descricao = String(formData.get("descricao") || "").trim();
+  const categoria = String(formData.get("categoria") || "").trim();
+  const modoConclusao = String(formData.get("modoConclusao") || "SIMPLES");
+  const linkRaw = String(formData.get("link") || "").trim();
   const frequenciaTipo = String(formData.get("frequenciaTipo") || "DIARIA") as FrequenciaTipo;
   const diasSemana = formData.getAll("diasSemana").map((v) => Number(v));
   const diaDoMesRaw = formData.get("diaDoMes");
@@ -28,17 +31,21 @@ export async function salvarTarefa(formData: FormData) {
   const horarioFim = String(formData.get("horarioFim") || "").trim() || null;
   const atribuidoATodos = formData.get("atribuidoATodos") === "todos";
   const colaboradorIds = formData.getAll("colaboradorIds").map((v) => String(v));
-  const requerFoto = formData.get("requerFoto") != null;
+  const requerFoto = modoConclusao === "FOTO";
+  const link = modoConclusao === "LINK" ? linkRaw : null;
 
   if (!titulo) throw new Error("Título é obrigatório.");
   if (!lojaId) throw new Error("Loja é obrigatória.");
+  if (modoConclusao === "LINK" && !linkRaw) throw new Error("Informe o link para esse tipo de tarefa.");
   garantirAcessoLoja(user, lojaId);
 
   const dados = {
     lojaId,
     titulo,
     descricao: descricao || null,
+    categoria: categoria || null,
     requerFoto,
+    link,
     frequenciaTipo,
     diasSemana: frequenciaTipo === "SEMANAL" ? diasSemana : [],
     diaDoMes: frequenciaTipo === "MENSAL" ? diaDoMes : null,
