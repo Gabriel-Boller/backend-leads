@@ -1,7 +1,7 @@
 import { requirePapel } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { carregarTarefasAtivasDaLoja, tarefasEsperadasParaUsuario } from "@/lib/tarefas";
-import { horarioLabel, estadoTarefaAgora, type EstadoTarefa } from "@/lib/schedule";
+import { horarioLabel, estadoTarefaAgora, tarefaDisponivelAgora, type EstadoTarefa } from "@/lib/schedule";
 import { urlAssinadaFoto } from "@/lib/storage";
 import { todayISO, fromIsoDate, fmtDatePretty, fmtTime, DIAS_SEMANA_LABEL, agoraNaLoja } from "@/lib/dates";
 import { marcarFeitoSemFoto, desmarcarTarefa } from "./actions";
@@ -49,16 +49,29 @@ export default async function MinhasTarefasPage() {
       </p>
 
       {total > 0 && (
-        <div className="grid grid-2" style={{ marginBottom: 16 }}>
-          <div className="stat">
-            <div className="stat-num">
-              {feitas}/{total}
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="grid grid-2" style={{ marginBottom: 12 }}>
+            <div className="stat">
+              <div className="stat-num">
+                {feitas}/{total}
+              </div>
+              <div className="stat-label">Tarefas concluídas</div>
             </div>
-            <div className="stat-label">Tarefas concluídas</div>
+            <div className="stat">
+              <div className="stat-num">{pct}%</div>
+              <div className="stat-label">Quão perto de terminar</div>
+            </div>
           </div>
-          <div className="stat">
-            <div className="stat-num">{pct}%</div>
-            <div className="stat-label">Quão perto de terminar</div>
+          <div style={{ height: 12, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${pct}%`,
+                borderRadius: 999,
+                background: pct === 100 ? "var(--success)" : "var(--primary)",
+                transition: "width 0.4s ease",
+              }}
+            />
           </div>
         </div>
       )}
@@ -78,6 +91,7 @@ export default async function MinhasTarefasPage() {
         itens.map(async ({ tarefa: t, done, inst, estado }) => {
           const fotoUrl = inst?.fotoPath ? await urlAssinadaFoto(inst.fotoPath) : null;
           const corClasse = done ? "done" : estado === "atrasada" ? "horario-atrasado" : estado === "na_hora" ? "horario-atual" : "";
+          const disponivel = done || tarefaDisponivelAgora(t, hoje);
 
           return (
             <div key={t.id} className={`task-item ${corClasse}`}>
@@ -87,6 +101,10 @@ export default async function MinhasTarefasPage() {
                     ✓
                   </button>
                 </form>
+              ) : !disponivel ? (
+                <div className="check-circle" style={{ opacity: 0.4 }} aria-label="Ainda não disponível">
+                  🔒
+                </div>
               ) : t.requerFoto ? (
                 <div className="check-circle" />
               ) : (
@@ -103,12 +121,17 @@ export default async function MinhasTarefasPage() {
                   {done && <span className="tag ok">Concluída {inst && `às ${fmtTime(inst.concluidoEm)}`}</span>}
                   {!done && estado === "atrasada" && <span className="tag late">⏰ Atrasada</span>}
                   {!done && estado === "na_hora" && <span className="tag" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>🕐 Na hora</span>}
+                  {!done && !disponivel && (
+                    <span className="tag" style={{ background: "var(--bg-soft)", color: "var(--ink-soft)" }}>
+                      🔒 Disponível às {t.horarioInicio}
+                    </span>
+                  )}
                 </div>
                 {done && fotoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={fotoUrl} alt="Foto enviada" className="photo-thumb" style={{ marginTop: 8 }} />
                 )}
-                {!done && t.requerFoto && (
+                {!done && disponivel && t.requerFoto && (
                   <div style={{ marginTop: 10 }}>
                     <CameraCapture tarefaId={t.id} />
                   </div>

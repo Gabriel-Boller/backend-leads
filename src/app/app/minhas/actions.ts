@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePapel } from "@/lib/auth";
 import { uploadFotoTarefa } from "@/lib/storage";
-import { todayISO, fromIsoDate } from "@/lib/dates";
+import { todayISO, fromIsoDate, agoraNaLoja } from "@/lib/dates";
+import { tarefaDisponivelAgora } from "@/lib/schedule";
 
 async function tarefaDoUsuario(tarefaId: string, usuarioId: string, lojaId: string) {
   const tarefa = await prisma.tarefa.findUnique({ where: { id: tarefaId } });
@@ -19,6 +20,9 @@ export async function marcarFeitoSemFoto(tarefaId: string) {
   if (!user.lojaId) throw new Error("Usuário sem loja.");
   const tarefa = await tarefaDoUsuario(tarefaId, user.id, user.lojaId);
   if (tarefa.requerFoto) throw new Error("Esta tarefa exige foto.");
+  if (!tarefaDisponivelAgora(tarefa, agoraNaLoja())) {
+    throw new Error(`Essa tarefa só pode ser concluída a partir das ${tarefa.horarioInicio}.`);
+  }
 
   const hoje = fromIsoDate(todayISO());
   await prisma.tarefaInstancia.upsert({
@@ -57,6 +61,9 @@ export async function concluirComFoto(tarefaId: string, formData: FormData): Pro
     const user = await requirePapel(["COLABORADOR"]);
     if (!user.lojaId) return { ok: false, erro: "Usuário sem loja." };
     const tarefa = await tarefaDoUsuario(tarefaId, user.id, user.lojaId);
+    if (!tarefaDisponivelAgora(tarefa, agoraNaLoja())) {
+      return { ok: false, erro: `Essa tarefa só pode ser concluída a partir das ${tarefa.horarioInicio}.` };
+    }
 
     const file = formData.get("foto");
     if (!(file instanceof File) || file.size === 0) {

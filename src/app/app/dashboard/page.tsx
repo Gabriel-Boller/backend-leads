@@ -46,10 +46,8 @@ export default async function DashboardPage({
       </div>
 
       <form className="card" style={{ marginBottom: 16 }}>
-        <div className="row">
+        <div className="row" style={{ alignItems: "flex-end" }}>
           <PeriodoFields periodo={periodo} de={de} ate={ate} />
-        </div>
-        <div className="row" style={{ marginTop: 12 }}>
           <button className="btn btn-soft" type="submit" style={{ flex: "0 0 auto" }}>
             Aplicar
           </button>

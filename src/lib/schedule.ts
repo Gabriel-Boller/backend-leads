@@ -66,6 +66,19 @@ export function tarefaAtrasadaAgora(tarefa: TarefaHorario, agora: Date): boolean
   return agora > limite;
 }
 
+/**
+ * A tarefa só pode ser marcada como feita a partir do horário-início configurado
+ * (evita concluir tudo de manhã cedo pra "se livrar" de uma tarefa que é pra ser
+ * feita, por exemplo, só das 9h30 às 10h). Sem horário-início definido, sempre
+ * disponível — e depois do horário-início, continua disponível mesmo atrasada.
+ */
+export function tarefaDisponivelAgora(tarefa: TarefaHorario, agora: Date): boolean {
+  if (!tarefa.horarioInicio) return true;
+  const [h, m] = tarefa.horarioInicio.split(":").map(Number);
+  const inicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), h, m);
+  return agora >= inicio;
+}
+
 export type EstadoTarefa = "neutra" | "na_hora" | "atrasada";
 
 /**

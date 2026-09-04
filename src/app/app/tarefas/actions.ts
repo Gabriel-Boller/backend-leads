@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePapel } from "@/lib/auth";
+import { fromIsoDate } from "@/lib/dates";
 import type { FrequenciaTipo } from "@prisma/client";
 
 function garantirAcessoLoja(user: { papel: string; lojaId: string | null }, lojaId: string) {
@@ -22,7 +23,7 @@ export async function salvarTarefa(formData: FormData) {
   const diasSemana = formData.getAll("diasSemana").map((v) => Number(v));
   const diaDoMesRaw = formData.get("diaDoMes");
   const diaDoMes = diaDoMesRaw ? Number(diaDoMesRaw) : null;
-  const datasEspecificas = formData.getAll("datasEspecificas").map((v) => new Date(String(v)));
+  const datasEspecificas = formData.getAll("datasEspecificas").map((v) => fromIsoDate(String(v)));
   const horarioInicio = String(formData.get("horarioInicio") || "").trim() || null;
   const horarioFim = String(formData.get("horarioFim") || "").trim() || null;
   const atribuidoATodos = formData.get("atribuidoATodos") === "todos";
