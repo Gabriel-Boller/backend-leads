@@ -4,7 +4,7 @@ import { calcAlertas } from "@/lib/alertas";
 import { fmtDatePretty, periodoParaRange, type Periodo } from "@/lib/dates";
 import PeriodoFields from "@/components/PeriodoFields";
 
-const PERIODOS_VALIDOS: Periodo[] = ["hoje", "7dias", "mes", "mes_passado", "personalizado"];
+const PERIODOS_VALIDOS: Periodo[] = ["hoje", "7dias", "30dias", "mes", "mes_passado", "personalizado"];
 
 export default async function AlertasPage({
   searchParams,

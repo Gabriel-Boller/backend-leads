@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { Papel } from "@prisma/client";
 
 const TABS_ADMIN: [string, string][] = [
+  ["/app/dashboard", "Dashboard"],
   ["/app/hoje", "Hoje"],
   ["/app/tarefas", "Tarefas"],
   ["/app/equipe", "Equipe"],

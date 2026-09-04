@@ -40,7 +40,7 @@ export function diffDays(a: Date, b: Date): number {
   return Math.round((pa.getTime() - pb.getTime()) / 86400000);
 }
 
-export type Periodo = "hoje" | "7dias" | "mes" | "mes_passado" | "personalizado";
+export type Periodo = "hoje" | "7dias" | "30dias" | "mes" | "mes_passado" | "personalizado";
 
 /** Converte um período nomeado (ou datas personalizadas) num intervalo [de, ate] em ISO. */
 export function periodoParaRange(periodo: Periodo, deCustom?: string, ateCustom?: string): { de: string; ate: string } {
@@ -48,6 +48,9 @@ export function periodoParaRange(periodo: Periodo, deCustom?: string, ateCustom?
   if (periodo === "hoje") {
     const iso = todayISO();
     return { de: iso, ate: iso };
+  }
+  if (periodo === "30dias") {
+    return { de: isoDate(daysAgo(29)), ate: todayISO() };
   }
   if (periodo === "mes") {
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);

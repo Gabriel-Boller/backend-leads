@@ -6,6 +6,7 @@ import type { Periodo } from "@/lib/dates";
 const OPCOES: [Periodo, string][] = [
   ["hoje", "Hoje"],
   ["7dias", "Últimos 7 dias"],
+  ["30dias", "Últimos 30 dias"],
   ["mes", "Este mês"],
   ["mes_passado", "Mês passado"],
   ["personalizado", "Personalizado"],
