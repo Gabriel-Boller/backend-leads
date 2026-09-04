@@ -67,7 +67,11 @@ export default function CameraCapture({ tarefaId }: { tarefaId: string }) {
       const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
       const fd = new FormData();
       fd.set("foto", file);
-      await concluirComFoto(tarefaId, fd);
+      const resultado = await concluirComFoto(tarefaId, fd);
+      if (!resultado.ok) {
+        setErro(resultado.erro);
+        return;
+      }
       setAberto(false);
       setFoto(null);
       router.refresh();

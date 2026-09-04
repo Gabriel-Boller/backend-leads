@@ -45,25 +45,38 @@ export async function desmarcarTarefa(tarefaId: string) {
   revalidatePath("/app/hoje");
 }
 
-export async function concluirComFoto(tarefaId: string, formData: FormData) {
-  const user = await requirePapel(["COLABORADOR"]);
-  if (!user.lojaId) throw new Error("Usuário sem loja.");
-  const tarefa = await tarefaDoUsuario(tarefaId, user.id, user.lojaId);
+export type ResultadoFoto = { ok: true } | { ok: false; erro: string };
 
-  const file = formData.get("foto");
-  if (!(file instanceof File) || file.size === 0) {
-    throw new Error("Selecione uma foto para enviar.");
+/**
+ * Retorna um resultado em vez de lançar erro: em produção o Next.js troca a mensagem
+ * de exceções não tratadas em Server Actions por um texto genérico redigido (por
+ * segurança) — capturando aqui a gente mantém a mensagem real visível pro usuário.
+ */
+export async function concluirComFoto(tarefaId: string, formData: FormData): Promise<ResultadoFoto> {
+  try {
+    const user = await requirePapel(["COLABORADOR"]);
+    if (!user.lojaId) return { ok: false, erro: "Usuário sem loja." };
+    const tarefa = await tarefaDoUsuario(tarefaId, user.id, user.lojaId);
+
+    const file = formData.get("foto");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, erro: "Selecione uma foto para enviar." };
+    }
+
+    const path = await uploadFotoTarefa(user.lojaId, user.id, file);
+    const hoje = fromIsoDate(todayISO());
+
+    await prisma.tarefaInstancia.upsert({
+      where: { tarefaId_usuarioId_data: { tarefaId, usuarioId: user.id, data: hoje } },
+      create: { tarefaId, usuarioId: user.id, data: hoje, tituloSnapshot: tarefa.titulo, fotoPath: path },
+      update: { fotoPath: path },
+    });
+
+    revalidatePath("/app/minhas");
+    revalidatePath("/app/hoje");
+    return { ok: true };
+  } catch (e) {
+    console.error("concluirComFoto falhou:", e);
+    return { ok: false, erro: e instanceof Error ? e.message : "Falha ao enviar a foto." };
   }
-
-  const path = await uploadFotoTarefa(user.lojaId, user.id, file);
-  const hoje = fromIsoDate(todayISO());
-
-  await prisma.tarefaInstancia.upsert({
-    where: { tarefaId_usuarioId_data: { tarefaId, usuarioId: user.id, data: hoje } },
-    create: { tarefaId, usuarioId: user.id, data: hoje, tituloSnapshot: tarefa.titulo, fotoPath: path },
-    update: { fotoPath: path },
-  });
-
-  revalidatePath("/app/minhas");
-  revalidatePath("/app/hoje");
 }
