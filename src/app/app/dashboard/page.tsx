@@ -10,6 +10,7 @@ import RankingList from "@/components/dashboard/RankingList";
 import EvolucaoChart from "@/components/dashboard/EvolucaoChart";
 import HojeBlock from "@/components/dashboard/HojeBlock";
 import AlertasBlock from "@/components/dashboard/AlertasBlock";
+import RealizadasBlock from "@/components/dashboard/RealizadasBlock";
 
 const PERIODOS_VALIDOS: Periodo[] = ["hoje", "7dias", "30dias", "mes", "mes_passado", "personalizado"];
 
@@ -80,6 +81,10 @@ export default async function DashboardPage({
       </div>
 
       <AlertasBlock alertas={alertas} />
+
+      <div style={{ marginTop: 16 }}>
+        <RealizadasBlock lojaIds={lojaIds} de={de} ate={ate} mostrarLoja={user.papel === "DONO" && lojaIds.length > 1} />
+      </div>
     </>
   );
 }

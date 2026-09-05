@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { trabalhaNoDia, tarefaAplicaNoDia } from "@/lib/schedule";
-import { isoDate } from "@/lib/dates";
+import { isoDate, paraFusoLoja } from "@/lib/dates";
 import type { EscalaTipo, FrequenciaTipo } from "@prisma/client";
 
 export type TarefaComAtribuicoes = {
@@ -74,6 +74,6 @@ export function tarefasEsperadasParaUsuario(
       t.ativo &&
       tarefaAplicaNoDia(t, date) &&
       tarefaAtribuidaA(t, usuario.id) &&
-      iso >= isoDate(inicioValidoParaUsuario(t, usuario))
+      iso >= isoDate(paraFusoLoja(inicioValidoParaUsuario(t, usuario)))
   );
 }

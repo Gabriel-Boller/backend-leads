@@ -4,12 +4,14 @@ export const DIAS_SEMANA_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sá
 export const FUSO_HORARIO = "America/Sao_Paulo";
 
 /**
- * "Agora" no fuso horário do Brasil, como um Date cujos getters locais (getFullYear,
- * getMonth, getDate, getHours...) já refletem o horário de Brasília — necessário porque
- * o servidor (Vercel) roda em UTC, e sem isso "hoje"/"agora" ficariam até 3h adiantados
- * (por exemplo, virando o dia às 21h de Brasília em vez da meia-noite de verdade).
+ * Converte qualquer instante (ex: um "createdAt" vindo do banco, sempre em UTC) pro Date
+ * cujos getters locais (getFullYear, getMonth, getDate, getHours...) refletem o horário
+ * de Brasília — necessário porque o servidor (Vercel) roda em UTC, e sem isso um instante
+ * perto da virada do dia é lido no dia seguinte (por exemplo, virando o dia às 21h de
+ * Brasília em vez da meia-noite de verdade). Use sempre que for extrair o "dia" (isoDate)
+ * de um DateTime que representa um instante real, não uma data pura (@db.Date).
  */
-export function agoraNaLoja(): Date {
+export function paraFusoLoja(instante: Date): Date {
   const partes = new Intl.DateTimeFormat("en-US", {
     timeZone: FUSO_HORARIO,
     year: "numeric",
@@ -19,11 +21,16 @@ export function agoraNaLoja(): Date {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
-  }).formatToParts(new Date());
+  }).formatToParts(instante);
   const get = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value);
   // hour12:false faz meia-noite virar "24" em vez de "00" — normaliza de volta pra 0.
   const hora = get("hour") % 24;
   return new Date(get("year"), get("month") - 1, get("day"), hora, get("minute"), get("second"));
+}
+
+/** "Agora" no fuso horário do Brasil — ver paraFusoLoja. */
+export function agoraNaLoja(): Date {
+  return paraFusoLoja(new Date());
 }
 
 /** Converte um Date para uma string ISO "YYYY-MM-DD" no fuso local (evita bug de UTC do toISOString). */
