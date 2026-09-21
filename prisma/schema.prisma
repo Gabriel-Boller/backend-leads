@@ -27,6 +27,16 @@ enum FrequenciaTipo {
   PERSONALIZADA
 }
 
+// PRODUTO = item final que sai de uma ficha técnica (o que a loja produz).
+// INSUMO = matéria-prima/ingrediente que entra numa ficha técnica ou é
+// consumido direto. O mesmo cadastro serve de referência pra produção,
+// lojas e (futuro) estoque — todo mundo aponta pro mesmo Item, em vez de
+// cada área ter seu próprio texto livre pro "mesmo" produto.
+enum ItemTipo {
+  PRODUTO
+  INSUMO
+}
+
 model Loja {
   id        String   @id @default(cuid())
   nome      String
@@ -34,6 +44,10 @@ model Loja {
 
   usuarios Usuario[]
   tarefas  Tarefa[]
+
+  metasProducao MetaProducao[]
+  producoes     ProducaoDiaria[]
+  consumos      ConsumoRegistrado[]
 }
 
 model Usuario {
@@ -57,6 +71,10 @@ model Usuario {
   tarefasAtribuidas TarefaAtribuicao[]
   instancias        TarefaInstancia[]
   sessoes           Sessao[]
+
+  metasProducaoCriadas MetaProducao[]      @relation("MetasCriadas")
+  producoesRegistradas ProducaoDiaria[]    @relation("ProducoesRegistradas")
+  consumosRegistrados  ConsumoRegistrado[] @relation("ConsumosRegistrados")
 
   @@index([lojaId])
 }
@@ -127,4 +145,95 @@ model Sessao {
   createdAt DateTime @default(now())
 
   @@index([usuarioId])
+}
+
+// Cadastro central de produtos e insumos — a "ficha técnica" de cada produto
+// é a lista de insumos (e quantidade de cada um) necessária pra produzir 1
+// unidade dele. Não é por loja: é o mesmo catálogo pra toda a rede.
+model Item {
+  id        String   @id @default(cuid())
+  nome      String
+  tipo      ItemTipo
+  unidade   String // texto livre: "kg", "g", "L", "ml", "un", "cx"...
+  codigo    String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  ingredientes  FichaTecnicaItem[] @relation("Ingredientes") // quando tipo = PRODUTO: os insumos da sua ficha técnica
+  usadoEmFichas FichaTecnicaItem[] @relation("UsadoComoInsumo") // quando tipo = INSUMO: em quais fichas técnicas ele entra
+
+  metasProducao MetaProducao[] // quando tipo = PRODUTO
+  producoes     ProducaoDiaria[] // quando tipo = PRODUTO
+  consumos      ConsumoRegistrado[] // quando tipo = INSUMO
+
+  @@index([tipo])
+}
+
+// Uma linha da ficha técnica: "pra produzir 1 unidade do produto X, gasta
+// quantidadePorUnidade do insumo Y".
+model FichaTecnicaItem {
+  id                   String @id @default(cuid())
+  produtoId            String
+  produto              Item   @relation("Ingredientes", fields: [produtoId], references: [id], onDelete: Cascade)
+  insumoId             String
+  insumo               Item   @relation("UsadoComoInsumo", fields: [insumoId], references: [id], onDelete: Cascade)
+  quantidadePorUnidade Float
+
+  @@unique([produtoId, insumoId])
+  @@index([insumoId])
+}
+
+// Meta/planejamento de produção do dia: quanto se espera produzir daquele
+// produto, naquela loja, naquela data. Um valor só por loja+produto+dia.
+model MetaProducao {
+  id          String   @id @default(cuid())
+  lojaId      String
+  loja        Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  produtoId   String
+  produto     Item     @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  data        DateTime @db.Date
+  quantidade  Float
+  criadoPorId String
+  criadoPor   Usuario  @relation("MetasCriadas", fields: [criadoPorId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([lojaId, produtoId, data])
+}
+
+// Registro real de produção — pode ter mais de um lançamento no mesmo dia
+// (ex: um lote de manhã, outro à tarde). A soma do dia é a "quantidade real
+// produzida" usada nos comparativos.
+model ProducaoDiaria {
+  id              String   @id @default(cuid())
+  lojaId          String
+  loja            Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  produtoId       String
+  produto         Item     @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  data            DateTime @db.Date
+  quantidade      Float
+  observacao      String?
+  registradoPorId String
+  registradoPor   Usuario  @relation("ProducoesRegistradas", fields: [registradoPorId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([lojaId, produtoId, data])
+}
+
+// Consumo real de insumo, lançado manualmente (ex: contagem de estoque, saída
+// de almoxarifado) — comparado contra o consumo esperado calculado a partir
+// da ficha técnica × produção real do período.
+model ConsumoRegistrado {
+  id              String   @id @default(cuid())
+  lojaId          String
+  loja            Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  insumoId        String
+  insumo          Item     @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+  data            DateTime @db.Date
+  quantidade      Float
+  observacao      String?
+  registradoPorId String
+  registradoPor   Usuario  @relation("ConsumosRegistrados", fields: [registradoPorId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([lojaId, insumoId, data])
 }

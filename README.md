@@ -57,6 +57,20 @@ Abra `http://localhost:3000` e entre com o e-mail/senha definidos em
    envia foto, conforme exigido.
 5. **Líder/Dono** acompanham em "Hoje" (progresso do dia), "Relatórios"
    (histórico filtrável com fotos) e "Alertas" (pendências).
+6. **Líder/Dono** → aba "Produção" → central de fichas técnicas e produção
+   diária:
+   - **Itens**: cadastro único de produtos (o que a loja produz) e insumos
+     (matéria-prima), com unidade de medida — é a referência que produção,
+     lojas e (no futuro) estoque usam em comum, sem duplicar cadastro.
+   - **Fichas técnicas**: pra cada produto, quais insumos e em que
+     quantidade são necessários pra produzir 1 unidade dele.
+   - **Registro diário**: por loja e data, define a meta de produção do dia,
+     registra a produção real (pode lançar mais de uma vez no dia) e o
+     consumo real de insumos.
+   - **Comparativo**: por período, compara produção planejada vs. realizada,
+     e consumo esperado (ficha técnica × produção real) vs. consumo real
+     lançado — ajuda a identificar desperdício, perda ou erro de
+     porcionamento.
 
 ## Scripts úteis
 
