@@ -1,34 +1,43 @@
 @import "tailwindcss";
 
+/* Tokens vindos de gestao-lojas-core/design-system (design-tokens.json + DESIGN.md).
+   Fonte de verdade fica lá — mudanças de paleta/tipografia começam naquele repositório. */
 :root {
   --bg: #ffffff;
-  --bg-soft: #f3fbfd;
+  --bg-soft: #f7fbfc;
   --accent: #c3ecf4;
-  --accent-strong: #9fdcea;
-  --primary: #0d7c9e;
-  --primary-dark: #0a5f79;
-  --ink: #0f2630;
-  --ink-soft: #4d6b76;
-  --line: #d9eef2;
+  --accent-strong: #7fcfe0;
+  --primary: #d58e47;
+  --primary-dark: #b06e30;
+  /* Texto sempre escuro sobre --primary/--accent-strong, em claro OU escuro — branco falha
+     contraste AA nesse tom de acento (checado: ~2.7:1; escuro dá ~5.5:1). */
+  --on-accent: #1f2933;
+  --ink: #1f2933;
+  --ink-soft: #5b6b73;
+  --line: #dceef3;
   --card: #ffffff;
-  --danger: #c94f4f;
+  --danger: #dc2626;
   --danger-bg: #fdeeee;
-  --success: #1f9d6b;
+  --success: #16a34a;
   --success-bg: #e9f8f1;
-  --warn: #b9820f;
+  --warn: #d97706;
   --warn-bg: #fbf3de;
   --shadow: 0 1px 2px rgba(15, 38, 48, 0.05), 0 6px 20px rgba(15, 38, 48, 0.06);
   --radius: 14px;
 }
 
+/* Dark mode é PROVISÓRIO — o brief em DESIGN.md ainda não cobre tema escuro.
+   Valores aqui mantêm o dark mode existente coerente com o novo acento, mas sujeitos
+   a revisão quando o dark mode oficial da paleta nova for decidido. */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0b1a20;
     --bg-soft: #0f232b;
     --accent: #144752;
     --accent-strong: #1c5c69;
-    --primary: #5fc4e0;
-    --primary-dark: #8bd7ec;
+    --primary: #e0a568;
+    --primary-dark: #eec190;
+    --on-accent: #1f2933;
     --ink: #eaf6f9;
     --ink-soft: #9fc1cb;
     --line: #1d3a43;
@@ -62,7 +71,7 @@ h1,
 h2,
 h3,
 .brand {
-  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
 button {
   font-family: inherit;
@@ -106,7 +115,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--on-accent);
   font-size: 16px;
   flex-shrink: 0;
 }
@@ -126,7 +135,7 @@ a {
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--accent);
-  color: var(--primary-dark);
+  color: var(--ink);
   letter-spacing: 0.2px;
   white-space: nowrap;
 }
@@ -153,7 +162,7 @@ a {
   border-radius: 999px;
   border: none;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -316,14 +325,14 @@ a {
 }
 .btn-primary {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-accent);
 }
 .btn-primary:hover {
   background: var(--primary-dark);
 }
 .btn-soft {
   background: var(--accent);
-  color: var(--primary-dark);
+  color: var(--ink);
 }
 .btn-soft:hover {
   background: var(--accent-strong);
@@ -415,7 +424,7 @@ textarea:focus {
 .chip.on {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-accent);
 }
 label.chip {
   display: inline-flex;
@@ -429,7 +438,7 @@ label.chip input {
 label.chip:has(input:checked) {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .task-item {
@@ -502,7 +511,7 @@ label.chip:has(input:checked) {
 }
 .tag.photo {
   background: var(--accent);
-  color: var(--primary-dark);
+  color: var(--ink);
 }
 .tag.late {
   background: var(--danger-bg);
@@ -610,7 +619,7 @@ tr:hover td {
   height: 56px;
   border-radius: 16px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -651,7 +660,7 @@ tr:hover td {
   height: 38px;
   border-radius: 50%;
   background: var(--accent);
-  color: var(--primary-dark);
+  color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;

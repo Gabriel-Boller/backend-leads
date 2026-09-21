@@ -3,30 +3,31 @@ import { fmtDatePretty, FUSO_HORARIO } from "@/lib/dates";
 import type { DadosRelatorio } from "@/lib/relatorio";
 
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#0f2630" },
+  // Cores alinhadas com gestao-lojas-core/design-system (react-pdf não lê CSS var, valores fixos aqui)
+  page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#1f2933" },
   title: { fontSize: 18, fontFamily: "Helvetica-Bold", marginBottom: 2 },
-  sub: { fontSize: 10, color: "#4d6b76", marginBottom: 1 },
+  sub: { fontSize: 10, color: "#5b6b73", marginBottom: 1 },
   statsRow: { flexDirection: "row", gap: 12, marginTop: 14, marginBottom: 18 },
-  stat: { flex: 1, backgroundColor: "#f3fbfd", borderRadius: 6, padding: 10 },
+  stat: { flex: 1, backgroundColor: "#f7fbfc", borderRadius: 6, padding: 10 },
   statNum: { fontSize: 16, fontFamily: "Helvetica-Bold" },
-  statLabel: { fontSize: 8.5, color: "#4d6b76", marginTop: 2 },
+  statLabel: { fontSize: 8.5, color: "#5b6b73", marginTop: 2 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold", marginTop: 10, marginBottom: 6 },
-  table: { borderTopWidth: 1, borderTopColor: "#d9eef2" },
+  table: { borderTopWidth: 1, borderTopColor: "#dceef3" },
   rowHead: {
     flexDirection: "row",
-    backgroundColor: "#f3fbfd",
+    backgroundColor: "#f7fbfc",
     paddingVertical: 5,
     paddingHorizontal: 6,
     fontFamily: "Helvetica-Bold",
     fontSize: 8.5,
-    color: "#4d6b76",
+    color: "#5b6b73",
   },
   row: {
     flexDirection: "row",
     paddingVertical: 5,
     paddingHorizontal: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#eef6f8",
+    borderBottomColor: "#dceef3",
   },
   cData: { width: "14%" },
   cColab: { width: "26%" },
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
   cHora: { width: "10%" },
   cFoto: { width: "10%" },
   cTarefaPend: { width: "60%" },
-  empty: { padding: 10, color: "#4d6b76", fontStyle: "italic" as const },
+  empty: { padding: 10, color: "#5b6b73", fontStyle: "italic" as const },
 });
 
 export function RelatorioDocument({ dados }: { dados: DadosRelatorio }) {
