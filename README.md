@@ -1,4 +1,25 @@
-# Checklist das Lojas
+# Gestão das Lojas
+
+Site único dos sistemas de gestão das lojas. Todo link passa primeiro pelo **login**;
+depois do login a pessoa cai no **HUB** (página inicial), que mostra só os sistemas
+que ela pode abrir:
+
+| Endereço | Sistema | Quem vê hoje |
+|---|---|---|
+| `/login` | Login (e-mail + senha) | todos |
+| `/` | HUB — lista dos sistemas liberados | todos logados |
+| `/app` | Checklist das Lojas | todos |
+| `/financeiro/compras` | Compras | Dono |
+| `/financeiro/despesas` | Despesas | Dono |
+| `/financeiro/dre` | DRE | Dono |
+| `/financeiro/fluxo-caixa` | Fluxo de Caixa | Dono |
+
+Quem vê o quê está em `src/lib/apps.ts` (`appsDoUsuario`). Os painéis financeiros
+vieram do repositório `CLOUD` (HTML em `src/financeiro/`) e leem a planilha Google
+Sheets através do servidor (`/financeiro/dados/*`), só pra quem está logado e tem
+acesso — o link da planilha nunca vai pro navegador.
+
+## Checklist das Lojas
 
 App de checklist de tarefas para gestão de lojas, com três papéis (dono, líder,
 colaborador), escalas de trabalho, tarefas recorrentes, fotos de conclusão e
@@ -22,7 +43,11 @@ relatórios.
    - a string do **Transaction pooler** (porta `6543`) → `DATABASE_URL`
    - a string do **Session pooler** ou **Direct connection** (porta `5432`)
      → `DIRECT_URL`
-4. Em **Storage**, crie um bucket chamado `fotos-tarefas` e deixe-o
+4. Link da planilha dos painéis financeiros: no Google Sheets, **Arquivo →
+   Compartilhar → Publicar na Web**, formato CSV. Copie o link e guarde só a parte
+   até `/pub` (sem `?gid=...`) → variável `PLANILHA_PUB_URL`. Ex:
+   `https://docs.google.com/spreadsheets/d/e/XXXX/pub`
+5. Em **Storage**, crie um bucket chamado `fotos-tarefas` e deixe-o
    **privado** (sem acesso público) — o app gera URLs assinadas temporárias
    para exibir as fotos só para quem tem permissão.
 

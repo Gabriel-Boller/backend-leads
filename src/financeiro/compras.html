@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Livro de Compras — Ficha de Insumos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  /* === design-tokens.json === */
+  --color-background: #FFFFFF;
+  --color-surface: #F7FBFC;
+  --color-border: #DCEEF3;
+  --color-text-primary: #1F2933;
+  --color-text-secondary: #5B6B73;
+  --color-text-on-accent: #1F2933;
+  --color-primary-100: #E6F7FB;
+  --color-primary-300: #C3ECF4;
+  --color-primary-500: #7FCFE0;
+  --color-primary-700: #4FA8BC;
+  --color-support-warm-300: #FADDA8;
+  --color-support-warm-500: #D58E47;
+  --color-support-warm-700: #B06E30;
+  --color-success-500: #16A34A;
+  --color-warning-500: #D97706;
+  --color-danger-500: #DC2626;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 9999px;
+
+  --font-base: 'Inter', system-ui, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(31,41,51,0.06);
+
+  /* categorical chart palette — validated (CVD-safe, fixed order, never cycled) */
+  --chart-1:#2a78d6; --chart-2:#eb6834; --chart-3:#1baf7a; --chart-4:#eda100;
+  --chart-5:#e87ba4; --chart-6:#008300; --chart-7:#4a3aa7; --chart-neutral:#9aa5ab;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--color-background);color:var(--color-text-primary);font-family:var(--font-base);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--space-6) var(--space-12);}
+
+a, button, input, select, textarea{font-family:inherit;}
+:focus-visible{outline:2px solid var(--color-primary-700);outline-offset:2px;}
+
+header{background:var(--color-primary-100);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-6);}
+.header-inner{max-width:1180px;margin:0 auto;padding:var(--space-6);display:flex;justify-content:space-between;align-items:center;gap:var(--space-5);flex-wrap:wrap;}
+h1{font-family:var(--font-base);font-weight:700;font-size:clamp(22px,3vw,28px);margin:0;line-height:1.1;color:var(--color-text-primary);}
+.period{font-size:12.5px;font-weight:500;color:var(--color-text-secondary);text-align:right;}
+
+.siteNav{display:flex;gap:var(--space-2);flex-wrap:wrap;}
+.siteNav a{font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-full);color:var(--color-primary-700);text-decoration:none;}
+.siteNav a:hover{background:var(--color-primary-100);}
+.siteNav a.active{background:var(--color-primary-500);color:var(--color-text-on-accent);}
+
+.flabel{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.linkBtn{font-size:12px;font-weight:500;color:var(--color-primary-700);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;}
+.count{font-size:12px;color:var(--color-text-secondary);}
+.ctaBtn{font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--color-support-warm-500);background:var(--color-support-warm-500);color:var(--color-text-on-accent);cursor:pointer;}
+.ctaBtn:hover{background:var(--color-support-warm-700);border-color:var(--color-support-warm-700);}
+.ctaBtn:disabled{opacity:.45;cursor:not-allowed;}
+.checkRow{display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;font-size:12.5px;cursor:pointer;border-radius:var(--radius-sm);}
+.checkRow:hover{background:var(--color-surface);}
+.checkRow .catHint{color:var(--color-text-secondary);font-size:11px;}
+.msg{font-size:12.5px;font-weight:500;padding:9px 14px;border-radius:var(--radius-sm);margin-bottom:var(--space-5);}
+.msg.err{background:#FCEBEA;color:var(--color-danger-500);border:1px solid var(--color-danger-500);}
+
+.filterbar{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-6);box-shadow:var(--shadow-sm);}
+.filterbar .flabel{margin-right:var(--space-1);}
+.fbtn{font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--radius-full);border:1px solid var(--color-border);background:var(--color-background);color:var(--color-text-secondary);cursor:pointer;transition:.15s;}
+.fbtn:hover{border-color:var(--color-primary-500);color:var(--color-primary-700);}
+.fbtn.on{background:var(--color-primary-500);border-color:var(--color-primary-500);color:var(--color-text-on-accent);font-weight:600;}
+.customRange{display:none;align-items:center;gap:var(--space-2);margin-left:var(--space-1);}
+.customRange.show{display:flex;}
+.customRange input{font-size:12px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-primary);}
+.filterbar .rightCluster{margin-left:auto;display:flex;align-items:center;gap:var(--space-4);}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-8);}
+.kpi{background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary-500);}
+.kpi .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.kpi .val{font-size:26px;font-weight:700;margin-top:var(--space-1);color:var(--color-text-primary);font-variant-numeric:tabular-nums;}
+.kpi .sub{font-size:11.5px;color:var(--color-text-secondary);margin-top:2px;}
+
+.tabs{display:flex;gap:var(--space-1);margin-bottom:var(--space-6);border-bottom:1px solid var(--color-border);}
+.tab{font-size:12.5px;font-weight:600;letter-spacing:.02em;padding:11px 18px;cursor:pointer;color:var(--color-text-secondary);background:transparent;border:none;border-bottom:2px solid transparent;transition:color .15s, border-color .15s;}
+.tab:hover{color:var(--color-text-primary);}
+.tab.active{color:var(--color-primary-700);border-bottom-color:var(--color-primary-500);}
+.view{display:none;}
+.view.active{display:block;animation:fade .2s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-5);}
+.card{background:var(--color-background);color:var(--color-text-primary);border-radius:var(--radius-md);border:1px solid var(--color-border);padding:var(--space-5);box-shadow:var(--shadow-sm);}
+.card h2{font-size:15px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-wrap:wrap;}
+.card .hint{font-size:11.5px;color:var(--color-text-secondary);margin:0 0 var(--space-4);}
+.card + .card{margin-top:var(--space-5);}
+.chart-box{position:relative;height:280px;}
+.chart-scroll{max-height:320px;overflow-y:auto;}
+.table-scroll{max-height:320px;overflow-y:auto;}
+.table-scroll thead th{position:sticky;top:0;background:var(--color-background);}
+
+select{font-size:12px;background:var(--color-surface);border:1px solid var(--color-border);color:var(--color-text-primary);padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;}
+.searchInput{width:100%;font-size:12.5px;padding:8px 12px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-primary);margin-bottom:var(--space-4);}
+.toggle-group{display:flex;gap:0;border:1px solid var(--color-border);border-radius:var(--radius-full);overflow:hidden;flex-wrap:wrap;}
+.toggle-group button{font-size:11px;font-weight:600;padding:6px 12px;border:none;background:var(--color-background);color:var(--color-text-secondary);cursor:pointer;}
+.toggle-group button.on{background:var(--color-primary-500);color:var(--color-text-on-accent);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;text-align:left;color:var(--color-text-secondary);padding:8px 10px;border-bottom:1px solid var(--color-border);}
+td{padding:8px 10px;border-bottom:1px solid var(--color-border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.mono{font-variant-numeric:tabular-nums;}
+.best{color:var(--color-success-500);font-weight:700;}
+.tag{font-size:10.5px;font-weight:500;padding:3px 9px;border-radius:var(--radius-full);background:var(--color-primary-100);border:1px solid var(--color-primary-300);color:var(--color-text-primary);display:inline-block;margin:1px 0;}
+.tag.bestTag{background:var(--color-success-500);border-color:var(--color-success-500);color:#fff;}
+.right{text-align:right;}
+.product-row{cursor:pointer;}
+.product-row:hover{background:var(--color-surface);}
+.empty{color:var(--color-text-secondary);font-style:italic;font-size:12.5px;padding:16px 0;}
+.msg{font-size:12.5px;font-weight:500;padding:9px 14px;border-radius:var(--radius-sm);margin-top:var(--space-2);}
+.msg.ok{background:var(--color-primary-100);color:var(--color-primary-700);border:1px solid var(--color-primary-300);}
+.msg.err{background:#FCEBEA;color:var(--color-danger-500);border:1px solid var(--color-danger-500);}
+footer{margin-top:var(--space-10);font-size:11px;color:var(--color-text-secondary);text-align:center;}
+
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+}
+
+#printArea{display:none;}
+#printArea .printHeader{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1F2933;padding-bottom:8px;margin-bottom:14px;}
+#printArea .printBrand{font-weight:700;font-size:14px;}
+#printArea .printMeta{font-size:10.5px;color:#5B6B73;}
+#printArea h1{font-size:17px;margin:0 0 2px;}
+#printArea h2{font-size:12.5px;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid #ddd;}
+#printArea p.sub{font-size:10.5px;color:#5B6B73;margin:0 0 10px;}
+#printArea table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+#printArea th, #printArea td{padding:5px 7px;border-bottom:1px solid #ddd;font-size:10.5px;text-align:left;vertical-align:top;}
+#printArea .kpiRow{display:flex;gap:24px;margin:10px 0 16px;}
+#printArea .kpiRow div{font-size:11px;}
+#printArea .kpiRow strong{display:block;font-size:15px;}
+#printArea .printFoot{margin-top:20px;font-size:9.5px;color:#5B6B73;text-align:center;}
+@media print{
+  body > *:not(#printArea){display:none !important;}
+  #printArea{display:block !important;}
+  @page{margin:14mm;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>Compra de insumos</h1>
+    <nav class="siteNav">
+      <a href="/">← Início</a>
+      <a href="/financeiro/compras" class="active">Compras</a>
+      <a href="/financeiro/despesas">Despesas</a>
+      <a href="/financeiro/dre">DRE</a>
+      <a href="/financeiro/fluxo-caixa">Fluxo de Caixa</a>
+    </nav>
+    <div class="period" id="periodLabel">—</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="msg err" id="loadError" style="display:none;"></div>
+
+  <div class="filterbar">
+    <span class="flabel">Período</span>
+    <button class="fbtn on" data-range="thisMonth">Mês atual</button>
+    <button class="fbtn" data-range="lastMonth">Mês anterior</button>
+    <button class="fbtn" data-range="3m">Últimos 3 meses</button>
+    <button class="fbtn" data-range="custom">Personalizado</button>
+    <span class="customRange" id="customRange">
+      <input type="date" id="dateFrom"> <span style="color:var(--color-text-secondary);font-size:11px;">até</span> <input type="date" id="dateTo">
+      <button class="fbtn" id="applyCustom" style="background:var(--color-text-primary);color:#fff;border-color:var(--color-text-primary);">Aplicar</button>
+    </span>
+    <span class="rightCluster">
+      <button class="linkBtn" id="refreshBtn" title="Buscar dados mais recentes da planilha">↻ atualizar dados</button>
+      <span class="count" id="filterCount"></span>
+    </span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="geral">Visão Geral</button>
+    <button class="tab" data-view="produto">Por Produto</button>
+    <button class="tab" data-view="historico">Histórico &amp; Preço</button>
+    <button class="tab" data-view="relatorios">Exportar Relatório</button>
+  </div>
+
+  <div class="view active" id="view-geral">
+    <div class="grid2">
+      <div class="card">
+        <h2>Gasto por categoria</h2>
+        <p class="hint">Participação de cada categoria no total gasto no período selecionado.</p>
+        <div class="chart-box"><canvas id="chartCategoria"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Consumo (R$)
+          <span class="toggle-group" id="periodToggle">
+            <button data-p="dia" class="on">Dia</button>
+            <button data-p="semana">Semana</button>
+            <button data-p="mes">Mês</button>
+          </span>
+        </h2>
+        <p class="hint">Total gasto por período de compra.</p>
+        <div class="chart-box"><canvas id="chartConsumo"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:var(--space-5);">
+      <h2>Gasto por item</h2>
+      <p class="hint">Todos os itens comprados no período, do maior para o menor gasto. Role a lista para ver todos. Clique num item na aba "Por Produto" para detalhes.</p>
+      <div class="chart-scroll"><div class="chart-box" id="itensBox"><canvas id="chartItens"></canvas></div></div>
+    </div>
+    <div class="grid2" style="margin-top:var(--space-5);">
+      <div class="card">
+        <h2>Gasto por fornecedor</h2>
+        <p class="hint">Total comprado de cada fornecedor no período selecionado.</p>
+        <div class="chart-box"><canvas id="chartFornecedor"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Ficha do fornecedor</h2>
+        <p class="hint">Selecione um fornecedor para ver o que foi comprado dele.</p>
+        <select id="selFornecedor" style="margin-bottom:var(--space-3);width:100%;"></select>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Produto</th><th>Data</th><th class="right">Preço</th><th class="right">Total</th></tr></thead>
+            <tbody id="tblFornecedor"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-produto">
+    <div class="card">
+      <h2>Melhor preço por produto</h2>
+      <p class="hint">Para cada item comprado de mais de um fornecedor, o menor preço unitário está marcado. Clique num produto para ver o histórico completo.</p>
+      <input type="text" class="searchInput" id="searchProduto" placeholder="Buscar por produto, categoria ou fornecedor...">
+      <table>
+        <thead><tr><th>Produto</th><th>Categoria</th><th>Fornecedores</th><th class="right">Melhor preço</th><th class="right">Nº compras</th></tr></thead>
+        <tbody id="tblProdutos"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view" id="view-historico">
+    <div class="card">
+      <h2>Evolução de preço por item
+        <select id="selItem"></select>
+      </h2>
+      <p class="hint">Preço unitário pago em cada compra. Veja geral (todos os fornecedores) ou separado por fornecedor.</p>
+      <span class="toggle-group" id="supplierToggle" style="margin-bottom:var(--space-3);"></span>
+      <div class="chart-box"><canvas id="chartEvolucao"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Histórico de compras do item</h2>
+      <table>
+        <thead><tr><th>Data</th><th>Fornecedor</th><th>Qtde</th><th class="right">Preço unit.</th><th class="right">Total</th></tr></thead>
+        <tbody id="tblHistorico"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view" id="view-relatorios">
+    <div class="grid2">
+      <div class="card">
+        <h2>Cotação de itens selecionados</h2>
+        <p class="hint">Escolha os itens que você vai comprar para ver, de uma vez só, onde está o melhor preço, o preço médio e o último valor pago em cada um — ideal para levar pra compra. Usa o histórico completo (não depende do filtro de período do topo).</p>
+        <input type="text" class="searchInput" id="reportSearch" placeholder="Buscar item...">
+        <label class="checkRow" style="font-weight:600;border-bottom:1px solid var(--color-border);margin-bottom:var(--space-1);">
+          <input type="checkbox" id="selectAllReport"> Selecionar todos
+        </label>
+        <div class="table-scroll" id="reportItemList" style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--space-2);"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-3);">
+          <span class="count" id="reportSelCount">0 itens selecionados</span>
+          <button class="linkBtn" id="clearReportSel">limpar seleção</button>
+        </div>
+        <button class="ctaBtn" id="genReportBtn" style="margin-top:var(--space-4);width:100%;" disabled>Gerar PDF da cotação</button>
+      </div>
+      <div class="card">
+        <h2>Resumo geral</h2>
+        <p class="hint">Segue o mesmo filtro de período selecionado no topo da página (atualmente: <strong id="reportPeriodLabel">—</strong>). Traz total gasto, gasto por categoria, por fornecedor e os itens que mais pesaram no período.</p>
+        <button class="ctaBtn" id="genSummaryBtn" style="width:100%;">Gerar PDF do resumo</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Dados lidos direto da planilha de compras do Google Sheets · valores em R$ · gerado para conferência interna</footer>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+const SHEET_CSV_URL = "/financeiro/dados/compras";
+
+const PALETTE = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7'];
+const NEUTRAL = '#9aa5ab';
+const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtQty = (v,u) => v==null ? '—' : (v + (u?(' '+u):''));
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+function parseBRNumber(str){
+  if(str==null) return null;
+  const s = String(str).replace(/R\$/g,'').replace(/\s/g,'').trim();
+  if(s==='') return null;
+  const norm = s.replace(/\./g,'').replace(',','.');
+  const n = parseFloat(norm);
+  return isNaN(n) ? null : n;
+}
+function parseBRDate(str){
+  if(!str) return null;
+  const s = String(str).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+function indexOfHeader(headerRow, candidates){
+  const norm = (headerRow||[]).map(h=>(h||'').toString().trim().toLowerCase());
+  for(const c of candidates){
+    const idx = norm.indexOf(c);
+    if(idx!==-1) return idx;
+  }
+  return -1;
+}
+function matrixToRows(matrix){
+  if(!matrix || !matrix.length) throw new Error('Nenhuma linha encontrada.');
+  const header = matrix[0];
+  const iData = indexOfHeader(header, ['data']);
+  const iFornecedor = indexOfHeader(header, ['fornecedor']);
+  const iCategoria = indexOfHeader(header, ['categoria']);
+  const iProduto = indexOfHeader(header, ['produto']);
+  const iQtde = indexOfHeader(header, ['qtde','quantidade','qtd']);
+  const iUn = indexOfHeader(header, ['un','unidade']);
+  const iVlUnit = indexOfHeader(header, ['vl unit','valor unitario','valor unitário','preco unitario','preço unitário']);
+  const iTotal = indexOfHeader(header, ['total']);
+  if(iData===-1 || iTotal===-1) throw new Error('Não encontrei as colunas "Data" e/ou "Total". Confira o cabeçalho.');
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const iso = parseBRDate(row[iData]);
+    if(!iso) continue;
+    const totalVal = parseBRNumber(row[iTotal]);
+    if(totalVal==null) continue;
+    out.push({
+      date: iso,
+      supplier: (iFornecedor>-1 ? (row[iFornecedor]||'').trim() : '') || 'Não informado',
+      category: (iCategoria>-1 ? (row[iCategoria]||'').trim() : '') || 'Sem categoria',
+      product: (iProduto>-1 ? (row[iProduto]||'').trim() : '') || '(diversos)',
+      qty: iQtde>-1 ? parseBRNumber(row[iQtde]) : null,
+      unit: iUn>-1 ? ((row[iUn]||'').trim() || null) : null,
+      unitPrice: iVlUnit>-1 ? parseBRNumber(row[iVlUnit]) : null,
+      total: totalVal
+    });
+  }
+  if(!out.length) throw new Error('Nenhuma linha válida (confira datas no formato DD/MM/AAAA e a coluna Total).');
+  return out;
+}
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#5B6B73';
+
+let RAW_ALL = [];
+let RAW = [];
+let charts = {};
+let currentConsumoPeriod = 'dia';
+let byProduct = {};
+let categoryColorCache = null;
+
+function showLoadError(html){
+  const box = document.getElementById('loadError');
+  box.innerHTML = html;
+  box.style.display = 'block';
+}
+function clearLoadError(){ document.getElementById('loadError').style.display = 'none'; }
+
+function setData(rows){
+  RAW_ALL = rows;
+  categoryColorCache = null;
+  const allDates = RAW_ALL.map(r=>r.date).sort();
+  if(allDates.length){
+    document.getElementById('dateFrom').value = allDates[0];
+    document.getElementById('dateTo').value = allDates[allDates.length-1];
+  }
+  applyRange(document.querySelector('.fbtn.on')?.dataset.range || 'thisMonth');
+  renderReportItemList();
+}
+
+function loadFromSheet(){
+  Papa.parse(SHEET_CSV_URL, {
+    download: true,
+    skipEmptyLines: true,
+    complete: res=>{
+      try{
+        const rows = matrixToRows(res.data);
+        setData(rows);
+        clearLoadError();
+      }catch(err){
+        showLoadError('Erro ao interpretar a planilha: ' + err.message);
+      }
+    },
+    error: ()=>{
+      showLoadError('Não foi possível carregar os dados da planilha agora. Verifique a conexão e clique em "atualizar dados".');
+    }
+  });
+}
+document.getElementById('refreshBtn').addEventListener('click', loadFromSheet);
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function startOfMonth(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';
+}
+function endOfMonth(iso){
+  const d = new Date(iso+'T00:00:00');
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return end.toISOString().slice(0,10);
+}
+function addMonths(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  d.setMonth(d.getMonth()+n);
+  return d.toISOString().slice(0,10);
+}
+function applyRange(range){
+  document.querySelectorAll('.fbtn[data-range]').forEach(b=>b.classList.toggle('on', b.dataset.range===range));
+  document.getElementById('customRange').classList.toggle('show', range==='custom');
+  const today = todayISO();
+  if(range==='thisMonth'){
+    const from = startOfMonth(today);
+    RAW = RAW_ALL.filter(r=>r.date>=from);
+  }
+  else if(range==='lastMonth'){
+    const prevMonth = addMonths(startOfMonth(today), -1);
+    const from = startOfMonth(prevMonth);
+    const to = endOfMonth(prevMonth);
+    RAW = RAW_ALL.filter(r=>r.date>=from && r.date<=to);
+  }
+  else if(range==='3m'){
+    const from = addMonths(today, -3);
+    RAW = RAW_ALL.filter(r=>r.date>=from);
+  }
+  else if(range==='custom'){
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    RAW = RAW_ALL.filter(r=>r.date>=from && r.date<=to);
+  }
+  document.getElementById('filterCount').textContent = RAW.length + ' de ' + RAW_ALL.length + ' lançamentos';
+  renderAll();
+}
+document.querySelectorAll('.fbtn[data-range]').forEach(b=>{
+  b.addEventListener('click', ()=>applyRange(b.dataset.range));
+});
+document.getElementById('applyCustom').addEventListener('click', ()=>applyRange('custom'));
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('view-'+t.dataset.view).classList.add('active');
+  });
+});
+
+document.getElementById('periodToggle').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  document.querySelectorAll('#periodToggle button').forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  currentConsumoPeriod = e.target.dataset.p;
+  renderConsumo();
+});
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function renderAll(){
+  if(RAW.length===0){
+    document.getElementById('periodLabel').textContent = 'Sem lançamentos no período';
+  } else {
+    const ds = RAW.map(r=>r.date).sort();
+    document.getElementById('periodLabel').textContent = fmtDate(ds[0]) + ' – ' + fmtDate(ds[ds.length-1]);
+  }
+  renderKpis();
+  renderCategoria();
+  renderItens();
+  renderConsumo();
+  renderFornecedorChart();
+  renderFornecedorSelect();
+  renderProdutos();
+  renderItemSelect();
+  document.getElementById('reportPeriodLabel').textContent = document.getElementById('periodLabel').textContent;
+}
+
+// indicador de variação percentual entre um valor e sua base de comparação
+function trendHtml(curr, prev, label){
+  if(!prev){ return `<span style="color:var(--color-text-secondary);">sem base de comparação</span>`; }
+  const pct = ((curr-prev)/prev)*100;
+  const up = pct>=0;
+  const color = up ? 'var(--color-support-warm-700)' : 'var(--color-success-500)';
+  const arrow = up ? '▲' : '▼';
+  return `<span style="color:${color};font-weight:600;">${arrow} ${Math.abs(pct).toFixed(1)}%</span> ${label}`;
+}
+
+// KPIs fixos: sempre calculados a partir de hoje e do histórico completo,
+// independente do filtro de período selecionado na tela.
+function renderKpis(){
+  const sumRange = (from, to) => RAW_ALL.filter(r=> r.date>=from && (!to || r.date<=to)).reduce((s,r)=>s+r.total,0);
+
+  const today = todayISO();
+  const thisStart = startOfMonth(today);
+
+  const lastMonthRef = addMonths(thisStart,-1);
+  const lastStart = startOfMonth(lastMonthRef), lastEnd = endOfMonth(lastMonthRef);
+
+  const twoAgoRef = addMonths(thisStart,-2);
+  const twoAgoStart = startOfMonth(twoAgoRef), twoAgoEnd = endOfMonth(twoAgoRef);
+
+  const thisMonthTotal = sumRange(thisStart, null);
+  const lastMonthTotal = sumRange(lastStart, lastEnd);
+  const twoAgoTotal = sumRange(twoAgoStart, twoAgoEnd);
+
+  const from3m = addMonths(today, -3);
+  const total3m = sumRange(from3m, null);
+  const avgMonth3m = total3m/3;
+  const weeksSpan = Math.max(1, ((new Date(today+'T00:00:00')) - (new Date(from3m+'T00:00:00'))) / 86400000 / 7);
+  const avgWeek = total3m/weeksSpan;
+
+  const kpis = [
+    {label:'Total gasto este mês', val: fmt(thisMonthTotal), sub: trendHtml(thisMonthTotal, lastMonthTotal, 'vs. mês anterior')},
+    {label:'Total gasto mês passado', val: fmt(lastMonthTotal), sub: trendHtml(lastMonthTotal, twoAgoTotal, 'vs. mês retrasado')},
+    {label:'Média mensal', val: fmt(avgMonth3m), sub: 'últimos 3 meses'},
+    {label:'Média semanal', val: fmt(avgWeek), sub: 'últimos 3 meses'}
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi"><div class="label">${k.label}</div><div class="val">${k.val}</div><div class="sub">${k.sub}</div></div>
+  `).join('');
+}
+
+// mapeamento de cor fixo por categoria (baseado no histórico completo, não no filtro atual,
+// para a cor de uma categoria não mudar quando o período selecionado muda)
+function getCategoryColorMap(){
+  if(categoryColorCache) return categoryColorCache;
+  const totals = {};
+  RAW_ALL.forEach(r=>{ totals[r.category]=(totals[r.category]||0)+r.total; });
+  const ranked = Object.entries(totals).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  const map = {};
+  ranked.slice(0,7).forEach((c,i)=>{ map[c]=PALETTE[i]; });
+  categoryColorCache = { map, top: new Set(ranked.slice(0,7)) };
+  return categoryColorCache;
+}
+
+function renderCategoria(){
+  destroy('categoria');
+  const { map, top } = getCategoryColorMap();
+  const grouped = {};
+  RAW.forEach(r=>{
+    const key = top.has(r.category) ? r.category : 'Outras';
+    grouped[key] = (grouped[key]||0)+r.total;
+  });
+  const labels = Object.keys(grouped);
+  const colors = labels.map(l=> map[l] || NEUTRAL);
+  charts.categoria = new Chart(document.getElementById('chartCategoria'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{data:Object.values(grouped), backgroundColor:colors, borderColor:'#ffffff', borderWidth:2}] },
+    options:{ plugins:{legend:{position:'right', labels:{color:'#1F2933', boxWidth:10, padding:10}}}, cutout:'58%' }
+  });
+}
+
+function renderItens(){
+  destroy('itens');
+  const byItem = {};
+  RAW.forEach(r=>{ byItem[r.product]=(byItem[r.product]||0)+r.total; });
+  const itemEntries = Object.entries(byItem).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('itensBox').style.height = Math.max(340, itemEntries.length*22) + 'px';
+  charts.itens = new Chart(document.getElementById('chartItens'), {
+    type:'bar',
+    data:{ labels:itemEntries.map(e=>e[0]), datasets:[{data:itemEntries.map(e=>e[1]), backgroundColor:'#4FA8BC', borderRadius:3}] },
+    options:{
+      indexAxis:'y',
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#5B6B73'}, grid:{color:'#EEF6F8'}}, y:{ticks:{color:'#1F2933'}, grid:{display:false}} }
+    }
+  });
+}
+
+function isoWeek(d){
+  const date = new Date(d); date.setHours(0,0,0,0);
+  date.setDate(date.getDate() + 4 - (date.getDay()||7));
+  const yearStart = new Date(date.getFullYear(),0,1);
+  const week = Math.ceil((((date-yearStart)/86400000)+1)/7);
+  return date.getFullYear()+'-S'+String(week).padStart(2,'0');
+}
+function bucketKey(iso, period){
+  if(period==='dia') return fmtDate(iso);
+  if(period==='semana') return isoWeek(iso);
+  const [y,m] = iso.split('-'); return y+'-'+m;
+}
+function renderConsumo(){
+  destroy('consumo');
+  const buckets = {};
+  RAW.forEach(r=>{ const k=bucketKey(r.date,currentConsumoPeriod); buckets[k]=(buckets[k]||0)+r.total; });
+  const sortedKeys = Object.keys(buckets).sort((a,b)=>{
+    if(currentConsumoPeriod==='dia'){
+      const da = a.split('/').reverse().join('-'); const db = b.split('/').reverse().join('-');
+      return da<db?-1:1;
+    }
+    return a<b?-1:1;
+  });
+  const labels = sortedKeys;
+  const data = sortedKeys.map(k=>buckets[k]);
+  charts.consumo = new Chart(document.getElementById('chartConsumo'), {
+    type:'bar',
+    data:{ labels, datasets:[{data, backgroundColor:'#D58E47', borderRadius:3}] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#5B6B73'}, grid:{display:false}}, y:{ticks:{color:'#5B6B73'}, grid:{color:'#EEF6F8'}} } }
+  });
+}
+
+function renderFornecedorChart(){
+  destroy('fornecedor');
+  const bySupplier = {};
+  RAW.forEach(r=>{ bySupplier[r.supplier]=(bySupplier[r.supplier]||0)+r.total; });
+  const entries = Object.entries(bySupplier).sort((a,b)=>b[1]-a[1]);
+  charts.fornecedor = new Chart(document.getElementById('chartFornecedor'), {
+    type:'bar',
+    data:{ labels:entries.map(e=>e[0]), datasets:[{data:entries.map(e=>e[1]), backgroundColor:'#4FA8BC', borderRadius:3}] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#5B6B73'}, grid:{display:false}}, y:{ticks:{color:'#5B6B73'}, grid:{color:'#EEF6F8'}} } }
+  });
+}
+
+function renderFornecedorSelect(){
+  const sel = document.getElementById('selFornecedor');
+  const current = sel.value;
+  const fornecedores = [...new Set(RAW.map(r=>r.supplier))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML = fornecedores.map(f=>`<option value="${f}">${f}</option>`).join('');
+  if(fornecedores.includes(current)) sel.value = current;
+  renderFornecedorTable();
+}
+document.getElementById('selFornecedor').addEventListener('change', renderFornecedorTable);
+function renderFornecedorTable(){
+  const f = document.getElementById('selFornecedor').value;
+  const rows = RAW.filter(r=>r.supplier===f).sort((a,b)=>a.date<b.date?1:-1);
+  document.getElementById('tblFornecedor').innerHTML = rows.map(r=>`
+    <tr><td>${r.product}</td><td class="mono">${fmtDate(r.date)}</td>
+    <td class="right mono">${r.unitPrice!=null?fmt(r.unitPrice):'—'}</td>
+    <td class="right mono">${fmt(r.total)}</td></tr>
+  `).join('') || '<tr><td class="empty" colspan="4">Sem lançamentos.</td></tr>';
+}
+
+let productSearchTerm = '';
+document.getElementById('searchProduto').addEventListener('input', e=>{
+  productSearchTerm = e.target.value.trim().toLowerCase();
+  renderProdutosTable();
+});
+
+function renderProdutos(){
+  byProduct = {};
+  RAW.forEach(r=>{ if(!(r.unitPrice>0)) return; (byProduct[r.product] = byProduct[r.product]||[]).push(r); });
+  renderProdutosTable();
+}
+function renderProdutosTable(){
+  const tblProdutos = document.getElementById('tblProdutos');
+  let entries = Object.entries(byProduct).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+  if(productSearchTerm){
+    entries = entries.filter(([prod,rows])=>{
+      const cat = rows[0].category.toLowerCase();
+      const suppliers = [...new Set(rows.map(r=>r.supplier.toLowerCase()))].join(' ');
+      return prod.toLowerCase().includes(productSearchTerm) || cat.includes(productSearchTerm) || suppliers.includes(productSearchTerm);
+    });
+  }
+  tblProdutos.innerHTML = entries.map(([prod,rows])=>{
+    const suppliers = [...new Set(rows.map(r=>r.supplier))];
+    const min = Math.min(...rows.map(r=>r.unitPrice));
+    const bestRow = rows.find(r=>r.unitPrice===min);
+    const cat = rows[0].category;
+    const supplierTags = suppliers.map(s=>{
+      const p = rows.filter(r=>r.supplier===s).map(r=>r.unitPrice);
+      const lowest = Math.min(...p);
+      const isBest = lowest===min;
+      return `<span class="tag ${isBest?'bestTag':''}">${s} · ${fmt(lowest)}</span>`;
+    }).join(' ');
+    return `<tr class="product-row" data-item="${prod}">
+      <td>${prod}</td><td>${cat}</td>
+      <td>${supplierTags}</td>
+      <td class="right best mono">${fmt(min)} <span style="color:var(--color-text-secondary);font-weight:400;">(${bestRow.supplier})</span></td>
+      <td class="right mono">${rows.length}</td>
+    </tr>`;
+  }).join('') || `<tr><td class="empty" colspan="5">${productSearchTerm ? 'Nenhum produto encontrado para "'+productSearchTerm+'".' : 'Sem lançamentos no período.'}</td></tr>`;
+}
+document.getElementById('tblProdutos').addEventListener('click', e=>{
+  const tr = e.target.closest('.product-row');
+  if(!tr) return;
+  const item = tr.dataset.item;
+  document.getElementById('selItem').value = item;
+  lastRenderedItem = item;
+  renderItem(item, 'Geral');
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelector('.tab[data-view="historico"]').classList.add('active');
+  document.getElementById('view-historico').classList.add('active');
+});
+
+let lastRenderedItem = null;
+function renderItemSelect(){
+  const sel = document.getElementById('selItem');
+  const current = sel.value;
+  const items = Object.keys(byProduct).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML = items.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(items.length===0){
+    document.getElementById('tblHistorico').innerHTML = '<tr><td class="empty" colspan="5">Sem dados.</td></tr>';
+    document.getElementById('supplierToggle').innerHTML = '';
+    destroy('evolucao');
+    return;
+  }
+  const chosen = items.includes(current) ? current : items[0];
+  sel.value = chosen;
+  const forceGeral = chosen !== lastRenderedItem;
+  renderItem(chosen, forceGeral ? 'Geral' : undefined);
+  lastRenderedItem = chosen;
+}
+document.getElementById('selItem').addEventListener('change', e=>{
+  lastRenderedItem = e.target.value;
+  renderItem(e.target.value, 'Geral');
+});
+document.getElementById('supplierToggle').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  renderItem(lastRenderedItem, e.target.dataset.s);
+});
+
+// cor por fornecedor fixa por item (baseada no histórico completo do item, estável entre filtros de período)
+function supplierColorMap(product){
+  const suppliers = [...new Set(RAW_ALL.filter(r=>r.product===product).map(r=>r.supplier))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const map = {};
+  suppliers.forEach((s,i)=>{ map[s] = i<PALETTE.length ? PALETTE[i] : NEUTRAL; });
+  return map;
+}
+
+let currentSupplierFilter = 'Geral';
+function renderItem(product, supplierFilter){
+  destroy('evolucao');
+  const allRows = (byProduct[product]||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const suppliersInItem = [...new Set(allRows.map(r=>r.supplier))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  if(supplierFilter===undefined) supplierFilter = currentSupplierFilter;
+  if(supplierFilter!=='Geral' && !suppliersInItem.includes(supplierFilter)) supplierFilter = 'Geral';
+  currentSupplierFilter = supplierFilter;
+
+  document.getElementById('supplierToggle').innerHTML = ['Geral', ...suppliersInItem].map(s=>
+    `<button data-s="${s}" class="${s===supplierFilter?'on':''}">${s}</button>`
+  ).join('');
+
+  // uma única linha: "Geral" traz todos os preços pagos (todas as compras, qualquer fornecedor),
+  // e um fornecedor selecionado traz só as compras dele — nunca separado por fornecedor ao mesmo tempo.
+  const rows = supplierFilter==='Geral' ? allRows : allRows.filter(r=>r.supplier===supplierFilter);
+  const colorMap = supplierColorMap(product);
+  const lineColor = supplierFilter==='Geral' ? '#4FA8BC' : colorMap[supplierFilter];
+  const labels = rows.map(r=>fmtDate(r.date));
+  const datasets = [{
+    label: supplierFilter==='Geral' ? 'Preço pago' : supplierFilter,
+    data: rows.map(r=>r.unitPrice),
+    borderColor: lineColor,
+    backgroundColor: lineColor,
+    spanGaps:true, tension:.25, pointRadius:4, pointHoverRadius:6
+  }];
+  charts.evolucao = new Chart(document.getElementById('chartEvolucao'), {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      plugins:{legend:{display:false}, tooltip:{callbacks:{afterLabel: ctx => rows[ctx.dataIndex] ? 'Fornecedor: '+rows[ctx.dataIndex].supplier : ''}}},
+      scales:{ x:{ticks:{color:'#5B6B73'}, grid:{color:'#F3F9FA'}},
+               y:{ticks:{color:'#5B6B73', callback:v=>'R$ '+v}, grid:{color:'#EEF6F8'}} }
+    }
+  });
+  document.getElementById('tblHistorico').innerHTML = rows.map(r=>`
+    <tr><td class="mono">${fmtDate(r.date)}</td><td>${r.supplier}</td>
+    <td class="mono">${fmtQty(r.qty,r.unit)}</td>
+    <td class="right mono">${fmt(r.unitPrice)}</td>
+    <td class="right mono">${fmt(r.total)}</td></tr>
+  `).join('');
+}
+
+// ===== Exportar Relatório =====
+
+// lista de itens para a cotação: usa o histórico completo (RAW_ALL), não o filtro de período,
+// porque "melhor preço" e "último pago" fazem mais sentido olhando todo o histórico.
+let selectedReportItems = new Set();
+let reportSearchTerm = '';
+
+function allProductNames(){
+  const set = new Set();
+  RAW_ALL.forEach(r=>{ if(r.unitPrice>0) set.add(r.product); });
+  return [...set].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+
+function visibleReportItems(){
+  return allProductNames().filter(p=> !reportSearchTerm || p.toLowerCase().includes(reportSearchTerm));
+}
+function renderReportItemList(){
+  const box = document.getElementById('reportItemList');
+  const items = visibleReportItems();
+  box.innerHTML = items.map(p=>`
+    <label class="checkRow">
+      <input type="checkbox" data-item="${p}" ${selectedReportItems.has(p)?'checked':''}> ${p}
+    </label>
+  `).join('') || '<div class="empty">Nenhum item encontrado.</div>';
+  updateReportSelCount();
+}
+document.getElementById('reportSearch').addEventListener('input', e=>{
+  reportSearchTerm = e.target.value.trim().toLowerCase();
+  renderReportItemList();
+});
+document.getElementById('selectAllReport').addEventListener('change', e=>{
+  visibleReportItems().forEach(p=> e.target.checked ? selectedReportItems.add(p) : selectedReportItems.delete(p));
+  renderReportItemList();
+});
+document.getElementById('reportItemList').addEventListener('change', e=>{
+  if(e.target.tagName!=='INPUT') return;
+  const item = e.target.dataset.item;
+  if(e.target.checked) selectedReportItems.add(item); else selectedReportItems.delete(item);
+  updateReportSelCount();
+});
+document.getElementById('clearReportSel').addEventListener('click', ()=>{
+  selectedReportItems.clear();
+  renderReportItemList();
+});
+function updateReportSelCount(){
+  document.getElementById('reportSelCount').textContent = selectedReportItems.size + ' item(ns) selecionado(s)';
+  document.getElementById('genReportBtn').disabled = selectedReportItems.size===0;
+  const items = visibleReportItems();
+  const selectAllCb = document.getElementById('selectAllReport');
+  const allChecked = items.length>0 && items.every(p=>selectedReportItems.has(p));
+  selectAllCb.checked = allChecked;
+  selectAllCb.indeterminate = !allChecked && items.some(p=>selectedReportItems.has(p));
+}
+
+function printReport(bodyHtml){
+  document.getElementById('printArea').innerHTML = `
+    <div class="printHeader">
+      <div class="printBrand">Compra de insumos</div>
+      <div class="printMeta">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    </div>
+    ${bodyHtml}
+    <div class="printFoot">Dados da planilha de compras · valores em R$</div>
+  `;
+  window.print();
+}
+
+document.getElementById('genReportBtn').addEventListener('click', ()=>{
+  const items = [...selectedReportItems].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  if(!items.length) return;
+  const rowsHtml = items.map(prod=>{
+    const rows = RAW_ALL.filter(r=>r.product===prod && r.unitPrice>0);
+    if(!rows.length) return '';
+    const cat = rows[0].category;
+    const min = Math.min(...rows.map(r=>r.unitPrice));
+    const bestRow = rows.find(r=>r.unitPrice===min);
+    const lastRow = rows.slice().sort((a,b)=> a.date<b.date?1:-1)[0];
+    const avg = rows.reduce((s,r)=>s+r.unitPrice,0)/rows.length;
+    const bySupplier = {};
+    rows.forEach(r=>{ (bySupplier[r.supplier]=bySupplier[r.supplier]||[]).push(r.unitPrice); });
+    const ranked = Object.entries(bySupplier).map(([s,prices])=>[s, Math.min(...prices)]).sort((a,b)=>a[1]-b[1]).slice(0,3);
+    return `<tr>
+      <td><strong>${prod}</strong><br><span style="color:#5B6B73;">${cat}</span></td>
+      <td>${fmt(min)}<br><span style="color:#5B6B73;">${bestRow.supplier}</span></td>
+      <td>${fmt(avg)}</td>
+      <td>${fmt(lastRow.unitPrice)}<br><span style="color:#5B6B73;">${lastRow.supplier} · ${fmtDate(lastRow.date)}</span></td>
+      <td>${ranked.map(([s,p])=>s+' ('+fmt(p)+')').join('<br>')}</td>
+    </tr>`;
+  }).join('');
+  printReport(`
+    <h1>Cotação de Insumos</h1>
+    <p class="sub">${items.length} item(ns) selecionado(s) · baseado em todo o histórico de compras</p>
+    <table>
+      <thead><tr><th>Produto</th><th>Melhor preço</th><th>Preço médio</th><th>Último pago</th><th>Fornecedores mais baratos</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `);
+});
+
+document.getElementById('genSummaryBtn').addEventListener('click', ()=>{
+  const periodLabel = document.getElementById('periodLabel').textContent;
+  const totalGasto = RAW.reduce((s,r)=>s+r.total,0);
+
+  const byCat = {}; RAW.forEach(r=>{ byCat[r.category]=(byCat[r.category]||0)+r.total; });
+  const catRows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
+    `<tr><td>${c}</td><td class="right">${fmt(v)}</td><td class="right">${totalGasto?((v/totalGasto)*100).toFixed(1):'0.0'}%</td></tr>`
+  ).join('');
+
+  const bySup = {}; RAW.forEach(r=>{ bySup[r.supplier]=(bySup[r.supplier]||0)+r.total; });
+  const supRows = Object.entries(bySup).sort((a,b)=>b[1]-a[1]).map(([s,v])=>
+    `<tr><td>${s}</td><td class="right">${fmt(v)}</td><td class="right">${totalGasto?((v/totalGasto)*100).toFixed(1):'0.0'}%</td></tr>`
+  ).join('');
+
+  const byItem = {}; RAW.forEach(r=>{ byItem[r.product]=(byItem[r.product]||0)+r.total; });
+  const topItens = Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([p,v])=>
+    `<tr><td>${p}</td><td class="right">${fmt(v)}</td></tr>`
+  ).join('');
+
+  printReport(`
+    <h1>Resumo de Compras</h1>
+    <p class="sub">Período: ${periodLabel}</p>
+    <div class="kpiRow">
+      <div>Total gasto<strong>${fmt(totalGasto)}</strong></div>
+      <div>Lançamentos<strong>${RAW.length}</strong></div>
+      <div>Fornecedores<strong>${Object.keys(bySup).length}</strong></div>
+      <div>Categorias<strong>${Object.keys(byCat).length}</strong></div>
+    </div>
+    <h2>Gasto por categoria</h2>
+    <table><thead><tr><th>Categoria</th><th class="right">Total</th><th class="right">%</th></tr></thead><tbody>${catRows || '<tr><td class="empty" colspan="3">Sem dados.</td></tr>'}</tbody></table>
+    <h2>Gasto por fornecedor</h2>
+    <table><thead><tr><th>Fornecedor</th><th class="right">Total</th><th class="right">%</th></tr></thead><tbody>${supRows || '<tr><td class="empty" colspan="3">Sem dados.</td></tr>'}</tbody></table>
+    <h2>Itens que mais pesaram</h2>
+    <table><thead><tr><th>Item</th><th class="right">Total</th></tr></thead><tbody>${topItens || '<tr><td class="empty" colspan="2">Sem dados.</td></tr>'}</tbody></table>
+  `);
+});
+
+loadFromSheet();
+</script>
+</body>
+</html>

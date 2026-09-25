@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUsuario } from "@/lib/auth";
 import { lojaIdsVisiveis } from "@/lib/escopo";
 import { calcAlertas } from "@/lib/alertas";
@@ -18,9 +19,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div id="app-shell">
       <div className="topbar">
-        <div className="brand">
+        <Link href="/" className="brand" title="Voltar ao início">
           <div className="brand-mark">✓</div>Checklist das Lojas
-        </div>
+        </Link>
         <UserMenu nome={user.nome} email={user.email} contato={user.contato} papel={user.papel} sair={sair} />
       </div>
       <Tabs papel={user.papel} alertCount={alertCount} />

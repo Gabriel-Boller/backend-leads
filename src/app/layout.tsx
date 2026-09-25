@@ -14,8 +14,8 @@ const inter = Inter({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Checklist das Lojas",
-  description: "Checklist de tarefas para gestão de lojas",
+  title: "Gestão das Lojas",
+  description: "Sistemas de gestão das lojas: checklist e painéis financeiros",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
