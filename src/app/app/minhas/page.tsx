@@ -68,7 +68,7 @@ export default async function MinhasTarefasPage() {
                 height: "100%",
                 width: `${pct}%`,
                 borderRadius: 999,
-                background: pct === 100 ? "var(--success)" : "var(--primary)",
+                background: pct === 100 ? "var(--success)" : "var(--data)",
                 transition: "width 0.4s ease",
               }}
             />

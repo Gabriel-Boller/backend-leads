@@ -117,7 +117,7 @@ export default async function HistoricoPage() {
                   fontSize: 12.5,
                   fontWeight: isHoje ? 800 : 600,
                   opacity: c.futuro ? 0.4 : 1,
-                  border: isHoje ? "2px solid var(--primary)" : "1px solid transparent",
+                  border: isHoje ? "2px solid var(--primary-ink)" : "1px solid transparent",
                 }}
               >
                 {c.dia}
