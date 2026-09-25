@@ -44,10 +44,10 @@ export default function EvolucaoChart({ pontos }: { pontos: PontoEvolucao[] }) {
           </g>
         ))}
 
-        <path d={areaPath} fill="var(--primary)" fillOpacity={0.1} stroke="none" />
-        <polyline points={pathPoints} fill="none" stroke="var(--primary)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={areaPath} fill="var(--data)" fillOpacity={0.1} stroke="none" />
+        <polyline points={pathPoints} fill="none" stroke="var(--data)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
-        <circle cx={x(n - 1)} cy={y(ultimo.pct)} r={4} fill="var(--primary)" stroke="var(--bg)" strokeWidth={2} />
+        <circle cx={x(n - 1)} cy={y(ultimo.pct)} r={4} fill="var(--data)" stroke="var(--bg)" strokeWidth={2} />
         <text x={x(n - 1)} y={y(ultimo.pct) - 10} textAnchor="end" fontSize={11} fontWeight={700} fill="var(--ink)">
           {ultimo.pct}%
         </text>
