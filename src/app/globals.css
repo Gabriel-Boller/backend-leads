@@ -832,3 +832,35 @@ small.hint {
     padding: 12px 14px;
   }
 }
+
+/* HUB (página inicial) */
+.hub-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.hub-card + .hub-card {
+  margin-top: 0;
+}
+.hub-card:hover {
+  border-color: var(--accent-strong);
+  background: var(--bg-soft);
+}
+.hub-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.hub-card-nome {
+  font-weight: 700;
+  font-size: 16px;
+}
+.hub-card-desc {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin-top: 2px;
+}
+.topbar a.brand {
+  text-decoration: none;
+}
