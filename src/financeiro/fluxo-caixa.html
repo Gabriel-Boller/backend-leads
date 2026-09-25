@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  /* === design-tokens.json === */
+  --color-background: #FFFFFF;
+  --color-surface: #F7FBFC;
+  --color-border: #DCEEF3;
+  --color-text-primary: #1F2933;
+  --color-text-secondary: #5B6B73;
+  --color-text-on-accent: #1F2933;
+  --color-primary-100: #E6F7FB;
+  --color-primary-300: #C3ECF4;
+  --color-primary-500: #7FCFE0;
+  --color-primary-700: #4FA8BC;
+  --color-primary-600: #62C1D6;
+  --color-primary-ink: #1B6A7C; /* azul escuro pra texto/destaque sobre branco (≈6.2:1) */
+  --color-data: #2A8AA0; /* barras de gráfico com série única */
+  --color-success-500: #16A34A;
+  --color-warning-500: #D97706;
+  --color-danger-500: #DC2626;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 9999px;
+
+  --font-base: 'Inter', system-ui, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(31,41,51,0.06);
+
+  /* categorical chart palette — validated (CVD-safe, fixed order, never cycled) */
+  --chart-1:#2a78d6; --chart-2:#eb6834; --chart-3:#1baf7a; --chart-4:#eda100;
+  --chart-5:#e87ba4; --chart-6:#008300; --chart-7:#4a3aa7; --chart-neutral:#9aa5ab;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--color-background);color:var(--color-text-primary);font-family:var(--font-base);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--space-6) var(--space-12);}
+
+a, button, input, select, textarea{font-family:inherit;}
+:focus-visible{outline:2px solid var(--color-primary-700);outline-offset:2px;}
+
+header{background:var(--color-primary-100);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-6);}
+.header-inner{max-width:1180px;margin:0 auto;padding:var(--space-6);display:flex;justify-content:space-between;align-items:center;gap:var(--space-5);flex-wrap:wrap;}
+h1{font-family:var(--font-base);font-weight:700;font-size:clamp(22px,3vw,28px);margin:0;line-height:1.1;color:var(--color-text-primary);}
+.period{font-size:12.5px;font-weight:500;color:var(--color-text-secondary);text-align:right;}
+
+.siteNav{display:flex;gap:var(--space-2);flex-wrap:wrap;}
+.siteNav a{font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-full);color:var(--color-primary-700);text-decoration:none;}
+.siteNav a:hover{background:var(--color-primary-100);}
+.siteNav a.active{background:var(--color-primary-500);color:var(--color-text-on-accent);}
+
+.flabel{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.linkBtn{font-size:12px;font-weight:500;color:var(--color-primary-700);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;}
+.count{font-size:12px;color:var(--color-text-secondary);}
+.msg{font-size:12.5px;font-weight:500;padding:9px 14px;border-radius:var(--radius-sm);margin-bottom:var(--space-5);}
+.msg.err{background:#FCEBEA;color:var(--color-danger-500);border:1px solid var(--color-danger-500);}
+
+.filterbar{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-6);box-shadow:var(--shadow-sm);}
+.filterbar .flabel{margin-right:var(--space-1);}
+.filterbar .rightCluster{margin-left:auto;display:flex;align-items:center;gap:var(--space-4);}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-8);}
+.kpi{background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary-500);}
+.kpi.warm::before{background:var(--color-primary-500);}
+.kpi .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.kpi .val{font-size:26px;font-weight:700;margin-top:var(--space-1);color:var(--color-text-primary);font-variant-numeric:tabular-nums;}
+.kpi .val.neg{color:var(--color-danger-500);}
+.kpi .sub{font-size:11.5px;color:var(--color-text-secondary);margin-top:2px;}
+
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-5);}
+.card{background:var(--color-background);color:var(--color-text-primary);border-radius:var(--radius-md);border:1px solid var(--color-border);padding:var(--space-5);box-shadow:var(--shadow-sm);}
+.card h2{font-size:15px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-wrap:wrap;}
+.card .hint{font-size:11.5px;color:var(--color-text-secondary);margin:0 0 var(--space-4);}
+.card + .card{margin-top:var(--space-5);}
+.chart-box{position:relative;height:280px;}
+
+footer{margin-top:var(--space-10);font-size:11px;color:var(--color-text-secondary);text-align:center;}
+
+.statPair{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);}
+.statBox{border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);}
+.statBox .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.statBox .val{font-size:22px;font-weight:700;margin-top:var(--space-1);font-variant-numeric:tabular-nums;}
+
+.deltaCallout{border:1px solid var(--color-primary-500);background:var(--color-primary-100);border-radius:var(--radius-md);padding:var(--space-4);margin-top:var(--space-4);}
+.deltaCallout .val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--color-primary-ink);}
+.deltaCallout p{font-size:11.5px;color:var(--color-text-secondary);margin:4px 0 0;}
+
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+  .statPair{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>Fluxo de Caixa</h1>
+    <nav class="siteNav">
+      <a href="/">← Início</a>
+      <a href="/financeiro/compras">Compras</a>
+      <a href="/financeiro/despesas">Despesas</a>
+      <a href="/financeiro/dre">DRE</a>
+      <a href="/financeiro/fluxo-caixa" class="active">Fluxo de Caixa</a>
+    </nav>
+    <div class="period" id="periodLabel">—</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="msg err" id="loadError" style="display:none;"></div>
+
+  <div class="filterbar">
+    <span class="flabel">Período</span>
+    <select id="selMonth" style="min-width:180px;"></select>
+    <span class="rightCluster">
+      <button class="linkBtn" id="refreshBtn" title="Buscar dados mais recentes das planilhas">↻ atualizar dados</button>
+      <span class="count" id="dataCount"></span>
+    </span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2>Resumo de caixa</h2>
+    <p class="hint">Regime de caixa: entradas de faturamento e saídas de tudo que efetivamente saiu da conta no período (inclui sócios e dívidas, diferente do <a href="/financeiro/dre">DRE</a>).</p>
+    <div class="statPair">
+      <div class="statBox">
+        <div class="label">Entradas</div>
+        <div class="val" id="statEntradas">—</div>
+      </div>
+      <div class="statBox">
+        <div class="label">Saídas</div>
+        <div class="val" id="statSaidas">—</div>
+      </div>
+    </div>
+    <div class="deltaCallout">
+      <div class="label" style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-primary-ink);">Geração de caixa do período</div>
+      <div class="val" id="statCaixa">—</div>
+      <p id="statDiferenca"></p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:var(--space-5);">
+    <h2>Entradas x saídas por mês</h2>
+    <p class="hint">Independe do filtro de período acima — mostra a série completa. Para o extrato lançamento a lançamento, veja <a href="/financeiro/despesas">Gestão de Despesas</a>.</p>
+    <div class="chart-box"><canvas id="chartCaixa"></canvas></div>
+  </div>
+
+  <footer>Dados das planilhas de Compras, Faturamento e Despesas do Google Sheets · valores em R$ · gerado para conferência interna</footer>
+</div>
+
+<script>
+const COMPRAS_CSV_URL = "/financeiro/dados/compras";
+const FATURAMENTO_CSV_URL = "/financeiro/dados/faturamento";
+const DESPESAS_CSV_URL = "/financeiro/dados/despesas";
+
+// Ano de referência dos 3 lançamentos — confirmado com o usuário. Qualquer linha fora
+// desse ano é ignorada (evita lançamentos com data digitada errada poluindo o relatório).
+const REPORT_YEAR = '2026';
+
+const PALETTE = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7'];
+const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+function parseBRNumber(str){
+  if(str==null) return null;
+  const s = String(str).replace(/R\$/g,'').replace(/\s/g,'').trim();
+  if(s==='') return null;
+  const n = parseFloat(s.replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+}
+function parseBRDate(str){
+  if(!str) return null;
+  const s = String(str).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+function normalize(s){
+  return (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+}
+const MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const MONTH_MAP = {janeiro:1,fevereiro:2,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+function monthKey(iso){ return iso.slice(0,7); }
+function monthLabel(key){
+  const [y,m] = key.split('-');
+  return MONTH_NAMES[parseInt(m,10)-1].replace(/^\w/,c=>c.toUpperCase()) + '/' + y;
+}
+
+// classifica cada categoria de despesa no grupo certo do DRE / não-operacional
+function classifyDespesa(categoria){
+  const c = normalize(categoria);
+  if(c.includes('socio')) return 'socios';
+  if(c.includes('financiamento') || c.includes('emprestimo') || c.includes('consorcio') || c.includes('parcelamento divida') || c.includes('dividas')) return 'dividas';
+  if(c.includes('imposto')) return 'impostos';
+  if(c.includes('juro') || c.includes('taxa bancaria') || c.includes('taxa maquininha') || c.includes('tarifa financeira') || c.includes('antecipa') || c.includes(' iof') || c.includes('despesa finan') || c.includes('financeiro')) return 'financeira';
+  return 'operacional';
+}
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#5B6B73';
+
+let RAW_COMPRAS = [];      // {date, total}
+let RAW_FATURAMENTO = [];  // {monthKey, origem, faturamento, pedidos}
+let RAW_DESPESAS = [];     // {date, categoria, descricao, valor(neg), centroCusto, conta, bucket}
+let MONTHS = [];           // ['2026-03', ...]
+let charts = {};
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function showLoadError(html){ const box=document.getElementById('loadError'); box.innerHTML=html; box.style.display='block'; }
+function clearLoadError(){ document.getElementById('loadError').style.display='none'; }
+
+// ---- parsing de cada planilha ----
+function parseCompras(matrix){
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const iso = parseBRDate(row[0]);
+    if(!iso || !iso.startsWith(REPORT_YEAR)) continue;
+    const total = parseBRNumber(row[7]);
+    if(total==null) continue;
+    out.push({date: iso, total});
+  }
+  return out;
+}
+function parseFaturamento(matrix){
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const mnum = MONTH_MAP[normalize(row[0])];
+    if(!mnum) continue;
+    const val = parseBRNumber(row[2]);
+    if(val==null) continue;
+    out.push({
+      monthKey: REPORT_YEAR + '-' + String(mnum).padStart(2,'0'),
+      origem: (row[1]||'').trim() || 'Não informado',
+      faturamento: val,
+      pedidos: parseBRNumber(row[3]) || 0
+    });
+  }
+  return out;
+}
+function parseDespesas(matrix){
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const iso = parseBRDate(row[0]);
+    if(!iso || !iso.startsWith(REPORT_YEAR)) continue;
+    const valor = parseBRNumber(row[3]);
+    if(valor==null) continue;
+    const categoria = (row[1]||'').trim() || 'Sem categoria';
+    out.push({
+      date: iso,
+      categoria,
+      descricao: (row[2]||'').trim(),
+      valor,
+      centroCusto: (row[4]||'').trim() || 'Não informado',
+      conta: (row[5]||'').trim() || 'Não informado',
+      bucket: classifyDespesa(categoria)
+    });
+  }
+  return out;
+}
+
+function loadAll(){
+  Promise.all([
+    new Promise((res,rej)=> Papa.parse(COMPRAS_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej})),
+    new Promise((res,rej)=> Papa.parse(FATURAMENTO_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej})),
+    new Promise((res,rej)=> Papa.parse(DESPESAS_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej}))
+  ]).then(([comprasMatrix, fatMatrix, despMatrix])=>{
+    RAW_COMPRAS = parseCompras(comprasMatrix);
+    RAW_FATURAMENTO = parseFaturamento(fatMatrix);
+    RAW_DESPESAS = parseDespesas(despMatrix);
+    MONTHS = [...new Set([
+      ...RAW_COMPRAS.map(r=>monthKey(r.date)),
+      ...RAW_FATURAMENTO.map(r=>r.monthKey),
+      ...RAW_DESPESAS.map(r=>monthKey(r.date))
+    ])].sort();
+    document.getElementById('dataCount').textContent = MONTHS.length + ' meses · ' + RAW_DESPESAS.length + ' despesas · ' + RAW_COMPRAS.length + ' compras';
+    populateMonthSelect();
+    clearLoadError();
+    renderAll();
+  }).catch(()=>{
+    showLoadError('Não foi possível carregar os dados das planilhas agora. Verifique a conexão e clique em "atualizar dados".');
+  });
+}
+document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+function populateMonthSelect(){
+  const sel = document.getElementById('selMonth');
+  const current = sel.value;
+  sel.innerHTML = '<option value="todos">Todos os meses</option>' +
+    MONTHS.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  sel.value = MONTHS.includes(current) ? current : 'todos';
+}
+document.getElementById('selMonth').addEventListener('change', renderAll);
+
+// ---- agregação para um conjunto de meses ----
+function computeDFC(monthsToUse){
+  const inMonths = key => monthsToUse.includes(key);
+  const compras = RAW_COMPRAS.filter(r=>inMonths(monthKey(r.date)));
+  const fat = RAW_FATURAMENTO.filter(r=>inMonths(r.monthKey));
+  const desp = RAW_DESPESAS.filter(r=>inMonths(monthKey(r.date)));
+
+  const receita = fat.reduce((s,r)=>s+r.faturamento,0);
+  const custo = compras.reduce((s,r)=>s+r.total,0);
+  const sumBucket = b => desp.filter(r=>r.bucket===b).reduce((s,r)=>s-r.valor,0);
+  const despOp = sumBucket('operacional');
+  const impostos = sumBucket('impostos');
+  const financeira = sumBucket('financeira');
+  const socios = sumBucket('socios');
+  const dividas = sumBucket('dividas');
+
+  const lucroBruto = receita - custo;
+  const resultOp = lucroBruto - despOp - impostos;
+  const lucroLiquido = resultOp - financeira;
+  const totalSaidaCaixa = custo + despOp + impostos + financeira + socios + dividas;
+  const geracaoCaixa = receita - totalSaidaCaixa;
+
+  return { receita, custo, despOp, impostos, financeira, socios, dividas, lucroLiquido, totalSaidaCaixa, geracaoCaixa };
+}
+
+function currentMonths(){
+  const sel = document.getElementById('selMonth').value;
+  return sel==='todos' ? MONTHS : [sel];
+}
+
+function renderAll(){
+  const months = currentMonths();
+  const sel = document.getElementById('selMonth').value;
+  document.getElementById('periodLabel').textContent = sel==='todos' ? (MONTHS.length ? monthLabel(MONTHS[0])+' – '+monthLabel(MONTHS[MONTHS.length-1]) : '—') : monthLabel(sel);
+
+  const dfc = computeDFC(months);
+  renderKpis(dfc);
+  renderDFC(dfc);
+  renderCaixaChart();
+}
+
+function renderKpis(dfc){
+  const acumulado = MONTHS.reduce((s,m)=> s + computeDFC([m]).geracaoCaixa, 0);
+  const kpis = [
+    {label:'Entradas', val: fmt(dfc.receita), sub: 'faturamento do período'},
+    {label:'Saídas', val: fmt(dfc.totalSaidaCaixa), sub: 'tudo que saiu da conta'},
+    {label:'Geração de caixa', val: fmt(dfc.geracaoCaixa), sub: 'entradas − saídas', neg: dfc.geracaoCaixa<0},
+    {label:'Acumulado no período rastreado', val: fmt(acumulado), sub: monthLabel(MONTHS[0])+' – '+monthLabel(MONTHS[MONTHS.length-1]), neg: acumulado<0}
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.neg?'warm':''}"><div class="label">${k.label}</div><div class="val ${k.neg?'neg':''}">${k.val}</div><div class="sub">${k.sub}</div></div>
+  `).join('');
+}
+
+function renderDFC(dfc){
+  document.getElementById('statEntradas').textContent = fmt(dfc.receita);
+  document.getElementById('statSaidas').textContent = fmt(dfc.totalSaidaCaixa);
+  document.getElementById('statCaixa').textContent = fmt(dfc.geracaoCaixa);
+  const diferenca = dfc.geracaoCaixa - dfc.lucroLiquido;
+  document.getElementById('statDiferenca').textContent =
+    `Diferença entre caixa gerado e lucro (DRE): ${fmt(diferenca)} — vem das retiradas de sócios (${fmt(dfc.socios)}) e pagamento de dívidas/financiamentos (${fmt(dfc.dividas)}), que saem do caixa mas não entram no resultado.`;
+}
+
+function renderCaixaChart(){
+  destroy('caixa');
+  const entradasS = MONTHS.map(m=>computeDFC([m]).receita);
+  const saidasS = MONTHS.map(m=>computeDFC([m]).totalSaidaCaixa);
+  const geracaoS = MONTHS.map(m=>computeDFC([m]).geracaoCaixa);
+  charts.caixa = new Chart(document.getElementById('chartCaixa'), {
+    type:'bar',
+    data:{
+      labels: MONTHS.map(monthLabel),
+      datasets:[
+        {label:'Entradas', data:entradasS, backgroundColor:PALETTE[0], borderRadius:3},
+        {label:'Saídas', data:saidasS, backgroundColor:PALETTE[1], borderRadius:3},
+        {label:'Geração de caixa', data:geracaoS, backgroundColor:PALETTE[2], borderRadius:3},
+      ]
+    },
+    options:{
+      plugins:{legend:{position:'top', labels:{color:'#1F2933', boxWidth:10}}},
+      scales:{ x:{ticks:{color:'#5B6B73'}, grid:{display:false}}, y:{ticks:{color:'#5B6B73', callback:v=>'R$ '+v}, grid:{color:'#EEF6F8'}} }
+    }
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>

@@ -11,7 +11,7 @@ export default async function LoginPage({
     <div className="center-screen">
       <div className="card login-card">
         <div className="login-logo">✓</div>
-        <h1 className="login-title">Checklist das Lojas</h1>
+        <h1 className="login-title">Gestão das Lojas</h1>
         <p className="login-sub">Entre com seu e-mail e senha</p>
         <form action={entrar}>
           <div className="field">

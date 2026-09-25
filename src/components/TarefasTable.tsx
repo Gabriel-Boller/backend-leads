@@ -28,7 +28,7 @@ function MiniStatCard({ titulo, linhas }: { titulo: string; linhas: { label: str
               style={{
                 height: "100%",
                 width: `${l.max ? Math.round((100 * l.valor) / l.max) : 0}%`,
-                background: "var(--primary)",
+                background: "var(--data)",
                 borderRadius: 999,
               }}
             />

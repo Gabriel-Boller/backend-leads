@@ -13,5 +13,5 @@ export async function entrar(formData: FormData) {
   }
 
   await criarSessao(usuario.id);
-  redirect("/app");
+  redirect("/");
 }

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRE — Demonstrativo de Resultado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  /* === design-tokens.json === */
+  --color-background: #FFFFFF;
+  --color-surface: #F7FBFC;
+  --color-border: #DCEEF3;
+  --color-text-primary: #1F2933;
+  --color-text-secondary: #5B6B73;
+  --color-text-on-accent: #1F2933;
+  --color-primary-100: #E6F7FB;
+  --color-primary-300: #C3ECF4;
+  --color-primary-500: #7FCFE0;
+  --color-primary-700: #4FA8BC;
+  --color-primary-600: #62C1D6;
+  --color-primary-ink: #1B6A7C; /* azul escuro pra texto/destaque sobre branco (≈6.2:1) */
+  --color-data: #2A8AA0; /* barras de gráfico com série única */
+  --color-success-500: #16A34A;
+  --color-warning-500: #D97706;
+  --color-danger-500: #DC2626;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 9999px;
+
+  --font-base: 'Inter', system-ui, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(31,41,51,0.06);
+
+  /* categorical chart palette — validated (CVD-safe, fixed order, never cycled) */
+  --chart-1:#2a78d6; --chart-2:#eb6834; --chart-3:#1baf7a; --chart-4:#eda100;
+  --chart-5:#e87ba4; --chart-6:#008300; --chart-7:#4a3aa7; --chart-neutral:#9aa5ab;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--color-background);color:var(--color-text-primary);font-family:var(--font-base);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--space-6) var(--space-12);}
+
+a, button, input, select, textarea{font-family:inherit;}
+:focus-visible{outline:2px solid var(--color-primary-700);outline-offset:2px;}
+
+header{background:var(--color-primary-100);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-6);}
+.header-inner{max-width:1180px;margin:0 auto;padding:var(--space-6);display:flex;justify-content:space-between;align-items:center;gap:var(--space-5);flex-wrap:wrap;}
+h1{font-family:var(--font-base);font-weight:700;font-size:clamp(22px,3vw,28px);margin:0;line-height:1.1;color:var(--color-text-primary);}
+.period{font-size:12.5px;font-weight:500;color:var(--color-text-secondary);text-align:right;}
+
+.siteNav{display:flex;gap:var(--space-2);flex-wrap:wrap;}
+.siteNav a{font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-full);color:var(--color-primary-700);text-decoration:none;}
+.siteNav a:hover{background:var(--color-primary-100);}
+.siteNav a.active{background:var(--color-primary-500);color:var(--color-text-on-accent);}
+
+.flabel{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.linkBtn{font-size:12px;font-weight:500;color:var(--color-primary-700);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;}
+.count{font-size:12px;color:var(--color-text-secondary);}
+.msg{font-size:12.5px;font-weight:500;padding:9px 14px;border-radius:var(--radius-sm);margin-bottom:var(--space-5);}
+.msg.err{background:#FCEBEA;color:var(--color-danger-500);border:1px solid var(--color-danger-500);}
+
+.filterbar{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-6);box-shadow:var(--shadow-sm);}
+.filterbar .flabel{margin-right:var(--space-1);}
+.filterbar .rightCluster{margin-left:auto;display:flex;align-items:center;gap:var(--space-4);}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-8);}
+.kpi{background:var(--color-background);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary-500);}
+.kpi.warm::before{background:var(--color-primary-500);}
+.kpi .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.kpi .val{font-size:26px;font-weight:700;margin-top:var(--space-1);color:var(--color-text-primary);font-variant-numeric:tabular-nums;}
+.kpi .val.neg{color:var(--color-danger-500);}
+.kpi .sub{font-size:11.5px;color:var(--color-text-secondary);margin-top:2px;}
+
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-5);}
+.card{background:var(--color-background);color:var(--color-text-primary);border-radius:var(--radius-md);border:1px solid var(--color-border);padding:var(--space-5);box-shadow:var(--shadow-sm);}
+.card h2{font-size:15px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-wrap:wrap;}
+.card .hint{font-size:11.5px;color:var(--color-text-secondary);margin:0 0 var(--space-4);}
+.card + .card{margin-top:var(--space-5);}
+.chart-box{position:relative;height:280px;}
+.chart-scroll{max-height:320px;overflow-y:auto;}
+.table-scroll{max-height:320px;overflow-y:auto;}
+.table-scroll thead th{position:sticky;top:0;background:var(--color-background);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;text-align:left;color:var(--color-text-secondary);padding:8px 10px;border-bottom:1px solid var(--color-border);}
+td{padding:8px 10px;border-bottom:1px solid var(--color-border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.mono{font-variant-numeric:tabular-nums;}
+.right{text-align:right;}
+.empty{color:var(--color-text-secondary);font-style:italic;font-size:12.5px;padding:16px 0;}
+footer{margin-top:var(--space-10);font-size:11px;color:var(--color-text-secondary);text-align:center;}
+
+/* DRE */
+.dreTable td{padding:9px 10px;}
+.dreTable tr.subtotal td{border-top:1px solid var(--color-text-primary);font-weight:700;}
+.dreTable tr.final td{border-top:2px solid var(--color-primary-700);font-weight:700;font-size:14.5px;color:var(--color-primary-700);}
+.dreTable .indent{padding-left:var(--space-5);color:var(--color-text-secondary);font-weight:400;}
+
+tr.expandable{cursor:pointer;}
+tr.expandable:hover td{background:var(--color-surface);}
+.chevron{display:inline-block;width:12px;color:var(--color-primary-700);font-size:10px;}
+tr.detailRow td{background:var(--color-surface);padding:0;border-bottom:1px solid var(--color-border);}
+.detailBox{padding:var(--space-3) var(--space-4) var(--space-3) var(--space-8);}
+.detailBox table{font-size:12px;}
+.detailBox th{font-size:9.5px;padding:5px 8px;}
+.detailBox td{padding:5px 8px;}
+.centroTable td{padding:9px 10px;}
+
+.statPair{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);}
+.statBox{border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);}
+.statBox .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.statBox .val{font-size:22px;font-weight:700;margin-top:var(--space-1);font-variant-numeric:tabular-nums;}
+
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+  .statPair{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>DRE — Demonstrativo de Resultado</h1>
+    <nav class="siteNav">
+      <a href="/">← Início</a>
+      <a href="/financeiro/compras">Compras</a>
+      <a href="/financeiro/despesas">Despesas</a>
+      <a href="/financeiro/dre" class="active">DRE</a>
+      <a href="/financeiro/fluxo-caixa">Fluxo de Caixa</a>
+    </nav>
+    <div class="period" id="periodLabel">—</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="msg err" id="loadError" style="display:none;"></div>
+
+  <div class="filterbar">
+    <span class="flabel">Período</span>
+    <select id="selMonth" style="min-width:180px;"></select>
+    <span class="rightCluster">
+      <button class="linkBtn" id="refreshBtn" title="Buscar dados mais recentes das planilhas">↻ atualizar dados</button>
+      <span class="count" id="dataCount"></span>
+    </span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Demonstrativo de Resultado (DRE)</h2>
+      <p class="hint">Receita de vendas menos custo de produção e despesas do período selecionado. Retiradas de sócios e pagamento de dívidas/financiamentos não entram aqui — veja a seção "Movimentações não-operacionais" abaixo.</p>
+      <table class="dreTable">
+        <tbody id="dreBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Evolução mensal</h2>
+      <p class="hint">Receita, custo, despesas e resultado líquido, mês a mês (independe do filtro de período acima).</p>
+      <div class="chart-box"><canvas id="chartEvolucao"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:var(--space-5);">
+    <h2>Despesas por categoria</h2>
+    <p class="hint">Despesas operacionais, impostos e despesas financeiras do período — não inclui retiradas de sócios nem pagamento de dívidas.</p>
+    <div class="chart-scroll"><div class="chart-box" id="despCatBox"><canvas id="chartDespCategoria"></canvas></div></div>
+  </div>
+
+  <div class="card" style="margin-top:var(--space-5);">
+    <h2>DRE por centro de custo</h2>
+    <p class="hint">Receita (por loja/origem) menos despesas atribuídas a cada centro de custo. Clique numa linha para ver o detalhe por categoria. O Custo de Produção (compras) é centralizado e não é dividido por centro — só aparece no DRE consolidado acima.</p>
+    <table class="centroTable">
+      <thead><tr><th>Centro de custo</th><th class="right">Receita</th><th class="right">Despesas</th><th class="right">Resultado</th></tr></thead>
+      <tbody id="centroCustoBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:var(--space-5);">
+    <h2>Movimentações não-operacionais</h2>
+    <p class="hint">Retiradas de sócios e pagamento de dívidas/financiamentos: saem do caixa da empresa, mas não são despesa — por isso ficam fora do resultado (DRE) acima. Veja o efeito disso no caixa na tela <a href="/financeiro/fluxo-caixa">Fluxo de Caixa</a>.</p>
+    <div class="statPair">
+      <div class="statBox">
+        <div class="label">Retiradas de sócios</div>
+        <div class="val" id="statSocios">—</div>
+      </div>
+      <div class="statBox">
+        <div class="label">Dívidas &amp; financiamentos pagos</div>
+        <div class="val" id="statDividas">—</div>
+      </div>
+    </div>
+    <div class="table-scroll" style="margin-top:var(--space-4);">
+      <table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th class="right">Valor</th></tr></thead>
+        <tbody id="tblNaoOperacional"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Dados das planilhas de Compras, Faturamento e Despesas do Google Sheets · valores em R$ · gerado para conferência interna</footer>
+</div>
+
+<script>
+const COMPRAS_CSV_URL = "/financeiro/dados/compras";
+const FATURAMENTO_CSV_URL = "/financeiro/dados/faturamento";
+const DESPESAS_CSV_URL = "/financeiro/dados/despesas";
+
+// Ano de referência dos 3 lançamentos — confirmado com o usuário. Qualquer linha fora
+// desse ano é ignorada (evita lançamentos com data digitada errada poluindo o relatório).
+const REPORT_YEAR = '2026';
+
+const PALETTE = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7'];
+const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = n => isFinite(n) ? (n*100).toLocaleString('pt-BR',{maximumFractionDigits:1}) + '%' : '—';
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+function parseBRNumber(str){
+  if(str==null) return null;
+  const s = String(str).replace(/R\$/g,'').replace(/\s/g,'').trim();
+  if(s==='') return null;
+  const n = parseFloat(s.replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+}
+function parseBRDate(str){
+  if(!str) return null;
+  const s = String(str).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+function normalize(s){
+  return (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+}
+const MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const MONTH_MAP = {janeiro:1,fevereiro:2,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+function monthKey(iso){ return iso.slice(0,7); }
+function monthLabel(key){
+  const [y,m] = key.split('-');
+  return MONTH_NAMES[parseInt(m,10)-1].replace(/^\w/,c=>c.toUpperCase()) + '/' + y;
+}
+
+// classifica cada categoria de despesa no grupo certo do DRE / não-operacional
+function classifyDespesa(categoria){
+  const c = normalize(categoria);
+  if(c.includes('socio')) return 'socios';
+  if(c.includes('financiamento') || c.includes('emprestimo') || c.includes('consorcio') || c.includes('parcelamento divida') || c.includes('dividas')) return 'dividas';
+  if(c.includes('imposto')) return 'impostos';
+  if(c.includes('juro') || c.includes('taxa bancaria') || c.includes('taxa maquininha') || c.includes('tarifa financeira') || c.includes('antecipa') || c.includes(' iof') || c.includes('despesa finan') || c.includes('financeiro')) return 'financeira';
+  return 'operacional';
+}
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#5B6B73';
+
+let RAW_COMPRAS = [];      // {date, total}
+let RAW_FATURAMENTO = [];  // {monthKey, origem, faturamento, pedidos}
+let RAW_DESPESAS = [];     // {date, categoria, descricao, valor(neg), centroCusto, conta, bucket}
+let MONTHS = [];           // ['2026-03', ...]
+let charts = {};
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function showLoadError(html){ const box=document.getElementById('loadError'); box.innerHTML=html; box.style.display='block'; }
+function clearLoadError(){ document.getElementById('loadError').style.display='none'; }
+
+// ---- parsing de cada planilha ----
+function parseCompras(matrix){
+  // mesmas colunas 0-7 da aba de compras: Data, Fornecedor, Categoria, Produto, Qtde, UN, VL Unit, Total
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const iso = parseBRDate(row[0]);
+    if(!iso || !iso.startsWith(REPORT_YEAR)) continue;
+    const total = parseBRNumber(row[7]);
+    if(total==null) continue;
+    out.push({date: iso, category: (row[2]||'').trim() || 'Sem categoria', total});
+  }
+  return out;
+}
+function parseFaturamento(matrix){
+  // Data (nome do mês, sem ano), Origem, Faturamento, Pedidos
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const mnum = MONTH_MAP[normalize(row[0])];
+    if(!mnum) continue;
+    const val = parseBRNumber(row[2]);
+    if(val==null) continue;
+    out.push({
+      monthKey: REPORT_YEAR + '-' + String(mnum).padStart(2,'0'),
+      origem: (row[1]||'').trim() || 'Não informado',
+      faturamento: val,
+      pedidos: parseBRNumber(row[3]) || 0
+    });
+  }
+  return out;
+}
+function parseDespesas(matrix){
+  // usa só a tabela da esquerda (colunas 0-5): Data, Categoria, Descrição, Valor, Centro Custo, Conta.
+  // a aba tem uma segunda tabela (colunas H+) de contas a pagar/financiamentos que fica de fora por enquanto.
+  const out = [];
+  for(let r=1;r<matrix.length;r++){
+    const row = matrix[r];
+    if(!row || !row.length) continue;
+    const iso = parseBRDate(row[0]);
+    if(!iso || !iso.startsWith(REPORT_YEAR)) continue;
+    const valor = parseBRNumber(row[3]);
+    if(valor==null) continue;
+    const categoria = (row[1]||'').trim() || 'Sem categoria';
+    out.push({
+      date: iso,
+      categoria,
+      descricao: (row[2]||'').trim(),
+      valor,
+      centroCusto: (row[4]||'').trim() || 'Não informado',
+      conta: (row[5]||'').trim() || 'Não informado',
+      bucket: classifyDespesa(categoria)
+    });
+  }
+  return out;
+}
+
+function loadAll(){
+  Promise.all([
+    new Promise((res,rej)=> Papa.parse(COMPRAS_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej})),
+    new Promise((res,rej)=> Papa.parse(FATURAMENTO_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej})),
+    new Promise((res,rej)=> Papa.parse(DESPESAS_CSV_URL, {download:true, skipEmptyLines:true, complete:r=>res(r.data), error:rej}))
+  ]).then(([comprasMatrix, fatMatrix, despMatrix])=>{
+    RAW_COMPRAS = parseCompras(comprasMatrix);
+    RAW_FATURAMENTO = parseFaturamento(fatMatrix);
+    RAW_DESPESAS = parseDespesas(despMatrix);
+    MONTHS = [...new Set([
+      ...RAW_COMPRAS.map(r=>monthKey(r.date)),
+      ...RAW_FATURAMENTO.map(r=>r.monthKey),
+      ...RAW_DESPESAS.map(r=>monthKey(r.date))
+    ])].sort();
+    document.getElementById('dataCount').textContent = MONTHS.length + ' meses · ' + RAW_DESPESAS.length + ' despesas · ' + RAW_COMPRAS.length + ' compras';
+    populateMonthSelect();
+    clearLoadError();
+    renderAll();
+  }).catch(()=>{
+    showLoadError('Não foi possível carregar os dados das planilhas agora. Verifique a conexão e clique em "atualizar dados".');
+  });
+}
+document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+function populateMonthSelect(){
+  const sel = document.getElementById('selMonth');
+  const current = sel.value;
+  sel.innerHTML = '<option value="todos">Todos os meses</option>' +
+    MONTHS.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  sel.value = MONTHS.includes(current) ? current : 'todos';
+}
+document.getElementById('selMonth').addEventListener('change', renderAll);
+
+// ---- agregação para um conjunto de meses ----
+function computeDRE(monthsToUse){
+  const inMonths = key => monthsToUse.includes(key);
+  const compras = RAW_COMPRAS.filter(r=>inMonths(monthKey(r.date)));
+  const fat = RAW_FATURAMENTO.filter(r=>inMonths(r.monthKey));
+  const desp = RAW_DESPESAS.filter(r=>inMonths(monthKey(r.date)));
+
+  const receita = fat.reduce((s,r)=>s+r.faturamento,0);
+  const custo = compras.reduce((s,r)=>s+r.total,0);
+  const sumBucket = b => desp.filter(r=>r.bucket===b).reduce((s,r)=>s-r.valor,0);
+  const despOp = sumBucket('operacional');
+  const impostos = sumBucket('impostos');
+  const financeira = sumBucket('financeira');
+  const socios = sumBucket('socios');
+  const dividas = sumBucket('dividas');
+
+  const lucroBruto = receita - custo;
+  const resultOp = lucroBruto - despOp - impostos;
+  const lucroLiquido = resultOp - financeira;
+
+  return { receita, custo, lucroBruto, despOp, impostos, resultOp, financeira, lucroLiquido, socios, dividas, desp, compras, fat };
+}
+
+function currentMonths(){
+  const sel = document.getElementById('selMonth').value;
+  return sel==='todos' ? MONTHS : [sel];
+}
+
+let lastDRE = null;
+function renderAll(){
+  const months = currentMonths();
+  const sel = document.getElementById('selMonth').value;
+  document.getElementById('periodLabel').textContent = sel==='todos' ? (MONTHS.length ? monthLabel(MONTHS[0])+' – '+monthLabel(MONTHS[MONTHS.length-1]) : '—') : monthLabel(sel);
+
+  const dre = computeDRE(months);
+  lastDRE = dre;
+  renderKpis(dre);
+  renderDRETable(dre);
+  renderEvolucaoChart();
+  renderDespCategoria(dre);
+  renderNaoOperacional(dre);
+  renderCentroCustoDRE(dre);
+}
+
+function renderKpis(dre){
+  const kpis = [
+    {label:'Receita', val: fmt(dre.receita), sub: 'faturamento do período'},
+    {label:'Custo de produção', val: fmt(dre.custo), sub: 'compras de insumos'},
+    {label:'Despesas totais (DRE)', val: fmt(dre.despOp+dre.impostos+dre.financeira), sub: 'operacional + impostos + financeira'},
+    {label:'Resultado líquido', val: fmt(dre.lucroLiquido), sub: 'margem ' + pct(dre.receita? dre.lucroLiquido/dre.receita : NaN), neg: dre.lucroLiquido<0}
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.neg?'warm':''}"><div class="label">${k.label}</div><div class="val ${k.neg?'neg':''}">${k.val}</div><div class="sub">${k.sub}</div></div>
+  `).join('');
+}
+
+// agrupa linhas por uma chave e soma um valor, ordenado do maior pro menor
+function groupSum(rows, keyFn, valFn){
+  const map = {};
+  rows.forEach(r=>{ const k=keyFn(r); map[k]=(map[k]||0)+valFn(r); });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+function detailTable(pairs, labelHeader){
+  if(!pairs.length) return '<div class="empty" style="padding:8px 0;">Sem lançamentos.</div>';
+  const total = pairs.reduce((s,[,v])=>s+v,0);
+  return `<table><thead><tr><th>${labelHeader}</th><th class="right">Total</th><th class="right">%</th></tr></thead><tbody>${
+    pairs.map(([k,v])=>`<tr><td>${k}</td><td class="right mono">${fmt(v)}</td><td class="right mono">${total?((v/total)*100).toFixed(1):'0.0'}%</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function detailReceita(dre){
+  const byOrigem = {};
+  dre.fat.forEach(r=>{
+    const o = byOrigem[r.origem] || (byOrigem[r.origem]={faturamento:0,pedidos:0});
+    o.faturamento += r.faturamento; o.pedidos += r.pedidos;
+  });
+  const entries = Object.entries(byOrigem).sort((a,b)=>b[1].faturamento-a[1].faturamento);
+  if(!entries.length) return '<div class="empty" style="padding:8px 0;">Sem lançamentos.</div>';
+  return `<table><thead><tr><th>Origem</th><th class="right">Faturamento</th><th class="right">Pedidos</th><th class="right">Ticket médio</th></tr></thead><tbody>${
+    entries.map(([o,v])=>`<tr><td>${o}</td><td class="right mono">${fmt(v.faturamento)}</td><td class="right mono">${v.pedidos}</td><td class="right mono">${v.pedidos?fmt(v.faturamento/v.pedidos):'—'}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function detailCusto(dre){
+  return detailTable(groupSum(dre.compras, r=>r.category, r=>r.total), 'Categoria de compra');
+}
+function detailDespBucket(dre, bucket){
+  const rows = dre.desp.filter(r=>r.bucket===bucket);
+  return detailTable(groupSum(rows, r=>r.categoria, r=>-r.valor), 'Categoria');
+}
+
+let expandedDRERow = null;
+function dreRow(key, label, val, cls, extra, expandable, dre){
+  const isOpen = expandable && expandedDRERow===key;
+  const chevron = expandable ? `<span class="chevron">${isOpen?'▾':'▸'}</span> ` : '';
+  let html = `<tr class="${cls||''} ${expandable?'expandable':''}" data-key="${expandable?key:''}"><td>${chevron}${label}</td><td class="right mono">${fmt(val)}</td><td class="right" style="color:var(--color-text-secondary);font-size:11px;">${extra||''}</td></tr>`;
+  if(isOpen){
+    let detail = '';
+    if(key==='receita') detail = detailReceita(dre);
+    else if(key==='custo') detail = detailCusto(dre);
+    else if(key==='despOp') detail = detailDespBucket(dre,'operacional');
+    else if(key==='impostos') detail = detailDespBucket(dre,'impostos');
+    else if(key==='financeira') detail = detailDespBucket(dre,'financeira');
+    html += `<tr class="detailRow"><td colspan="3"><div class="detailBox">${detail}</div></td></tr>`;
+  }
+  return html;
+}
+function renderDRETable(dre){
+  const rows = [
+    dreRow('receita', 'Receita Bruta (Faturamento)', dre.receita, '', '', true, dre),
+    dreRow('custo', '<span class="indent">(−) Custo de Produção / Insumos</span>', -dre.custo, '', '', true, dre),
+    dreRow('lucroBruto', '= Lucro Bruto', dre.lucroBruto, 'subtotal', 'margem ' + pct(dre.receita? dre.lucroBruto/dre.receita : NaN), false, dre),
+    dreRow('despOp', '<span class="indent">(−) Despesas Operacionais</span>', -dre.despOp, '', '', true, dre),
+    dreRow('impostos', '<span class="indent">(−) Impostos</span>', -dre.impostos, '', '', true, dre),
+    dreRow('resultOp', '= Resultado Operacional (EBITDA aprox.)', dre.resultOp, 'subtotal', 'margem ' + pct(dre.receita? dre.resultOp/dre.receita : NaN), false, dre),
+    dreRow('financeira', '<span class="indent">(−) Despesas Financeiras</span>', -dre.financeira, '', '', true, dre),
+    dreRow('lucroLiquido', '= Resultado Líquido', dre.lucroLiquido, 'final', 'margem ' + pct(dre.receita? dre.lucroLiquido/dre.receita : NaN), false, dre),
+  ].join('');
+  document.getElementById('dreBody').innerHTML = rows +
+    `<tr><td colspan="3" style="border:none;padding-top:10px;font-size:10px;color:var(--color-text-secondary);">EBITDA aproximado: não desconta depreciação/amortização (sem esse dado disponível). Clique numa linha com ▸ para ver o detalhe.</td></tr>`;
+}
+document.getElementById('dreBody').addEventListener('click', e=>{
+  const tr = e.target.closest('tr.expandable');
+  if(!tr || !lastDRE) return;
+  const key = tr.dataset.key;
+  expandedDRERow = expandedDRERow===key ? null : key;
+  renderDRETable(lastDRE);
+});
+
+// DRE por centro de custo: receita (por origem/loja) menos despesas atribuídas a cada centro.
+// Compras não tem centro de custo na planilha, então o custo de produção fica só no consolidado.
+function computeCentroDRE(dre){
+  const centros = new Set([
+    ...dre.fat.map(r=>r.origem),
+    ...dre.desp.filter(r=>r.bucket!=='socios' && r.bucket!=='dividas').map(r=>r.centroCusto)
+  ]);
+  return [...centros].map(centro=>{
+    const receita = dre.fat.filter(r=>r.origem===centro).reduce((s,r)=>s+r.faturamento,0);
+    const rows = dre.desp.filter(r=>r.centroCusto===centro && r.bucket!=='socios' && r.bucket!=='dividas');
+    const despesas = rows.reduce((s,r)=>s-r.valor,0);
+    return { centro, receita, despesas, resultado: receita-despesas, rows };
+  }).sort((a,b)=>b.resultado-a.resultado);
+}
+let expandedCentroRow = null;
+function renderCentroCustoDRE(dre){
+  const list = computeCentroDRE(dre);
+  document.getElementById('centroCustoBody').innerHTML = list.map(c=>{
+    const isOpen = expandedCentroRow===c.centro;
+    const chevron = `<span class="chevron">${isOpen?'▾':'▸'}</span> `;
+    let html = `<tr class="expandable" data-centro="${c.centro}">
+      <td>${chevron}${c.centro}</td>
+      <td class="right mono">${c.receita ? fmt(c.receita) : '—'}</td>
+      <td class="right mono">${fmt(c.despesas)}</td>
+      <td class="right mono" style="font-weight:700;color:${c.resultado>=0?'var(--color-success-500)':'var(--color-danger-500)'};">${fmt(c.resultado)}</td>
+    </tr>`;
+    if(isOpen){
+      html += `<tr class="detailRow"><td colspan="4"><div class="detailBox">${detailTable(groupSum(c.rows, r=>r.categoria, r=>-r.valor), 'Categoria')}</div></td></tr>`;
+    }
+    return html;
+  }).join('') || '<tr><td class="empty" colspan="4">Sem dados no período.</td></tr>';
+}
+document.getElementById('centroCustoBody').addEventListener('click', e=>{
+  const tr = e.target.closest('tr.expandable');
+  if(!tr || !lastDRE) return;
+  const centro = tr.dataset.centro;
+  expandedCentroRow = expandedCentroRow===centro ? null : centro;
+  renderCentroCustoDRE(lastDRE);
+});
+
+function renderEvolucaoChart(){
+  destroy('evolucao');
+  const receitaS = MONTHS.map(m=>computeDRE([m]).receita);
+  const custoS = MONTHS.map(m=>computeDRE([m]).custo);
+  const despS = MONTHS.map(m=>{ const d=computeDRE([m]); return d.despOp+d.impostos+d.financeira; });
+  const lucroS = MONTHS.map(m=>computeDRE([m]).lucroLiquido);
+  charts.evolucao = new Chart(document.getElementById('chartEvolucao'), {
+    type:'line',
+    data:{
+      labels: MONTHS.map(monthLabel),
+      datasets:[
+        {label:'Receita', data:receitaS, borderColor:PALETTE[0], backgroundColor:PALETTE[0], tension:.25, pointRadius:4},
+        {label:'Custo', data:custoS, borderColor:PALETTE[1], backgroundColor:PALETTE[1], tension:.25, pointRadius:4},
+        {label:'Despesas', data:despS, borderColor:PALETTE[3], backgroundColor:PALETTE[3], tension:.25, pointRadius:4},
+        {label:'Resultado líquido', data:lucroS, borderColor:PALETTE[2], backgroundColor:PALETTE[2], tension:.25, pointRadius:4},
+      ]
+    },
+    options:{
+      plugins:{legend:{position:'top', labels:{color:'#1F2933', boxWidth:10}}},
+      scales:{ x:{ticks:{color:'#5B6B73'}, grid:{color:'#F3F9FA'}},
+               y:{ticks:{color:'#5B6B73', callback:v=>'R$ '+v}, grid:{color:'#EEF6F8'}} }
+    }
+  });
+}
+
+function renderDespCategoria(dre){
+  destroy('despCategoria');
+  const byCat = {};
+  dre.desp.filter(r=>r.bucket!=='socios' && r.bucket!=='dividas').forEach(r=>{
+    byCat[r.categoria] = (byCat[r.categoria]||0) - r.valor;
+  });
+  const entries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('despCatBox').style.height = Math.max(280, entries.length*22) + 'px';
+  charts.despCategoria = new Chart(document.getElementById('chartDespCategoria'), {
+    type:'bar',
+    data:{ labels: entries.map(e=>e[0]), datasets:[{data:entries.map(e=>e[1]), backgroundColor:'#4FA8BC', borderRadius:3}] },
+    options:{
+      indexAxis:'y',
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#5B6B73'}, grid:{color:'#EEF6F8'}}, y:{ticks:{color:'#1F2933'}, grid:{display:false}} }
+    }
+  });
+}
+
+function renderNaoOperacional(dre){
+  document.getElementById('statSocios').textContent = fmt(dre.socios);
+  document.getElementById('statDividas').textContent = fmt(dre.dividas);
+  const rows = dre.desp.filter(r=>r.bucket==='socios' || r.bucket==='dividas').sort((a,b)=> a.date<b.date?1:-1);
+  document.getElementById('tblNaoOperacional').innerHTML = rows.map(r=>`
+    <tr><td class="mono">${fmtDate(r.date)}</td><td>${r.bucket==='socios'?'Sócios':'Dívida/Financiamento'}</td><td>${r.categoria}</td><td>${r.descricao||'—'}</td><td class="right mono">${fmt(-r.valor)}</td></tr>
+  `).join('') || '<tr><td class="empty" colspan="5">Sem lançamentos no período.</td></tr>';
+}
+
+loadAll();
+</script>
+</body>
+</html>
